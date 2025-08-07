@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:trail_sync/screens/activity.dart';
+import 'package:trail_sync/screens/groups.dart';
 import 'package:trail_sync/screens/home.dart';
 import 'package:trail_sync/screens/profile.dart';
 import 'package:trail_sync/screens/sign_in.dart';
@@ -42,6 +43,15 @@ final _router = GoRouter(
               path: '/activity',
               name: 'activity',
               builder: (context, state) => const ActivityScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/groups',
+              name: 'groups',
+              builder: (context, state) => const GroupsScreen(),
             ),
           ],
         ),
