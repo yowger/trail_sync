@@ -4,7 +4,7 @@ import 'package:icons_plus/icons_plus.dart';
 
 import 'package:trail_sync/widgets/custom_button.dart';
 import 'package:trail_sync/widgets/custom_form_text_field.dart';
-import 'package:trail_sync/screens/auth_header.dart';
+import 'package:trail_sync/widgets/auth_header.dart';
 import 'package:trail_sync/widgets/text_divider.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -27,7 +27,8 @@ class _SignInScreenState extends State<SignInScreen> {
     final isValid = _formKey.currentState!.validate();
     if (!isValid) return;
 
-    debugPrint("Logging in with ${emailController.text}");
+    // debugPrint("Logging in with ${emailController.text}");
+    context.goNamed('home');
   }
 
   void _loginWithGoogle() {
@@ -66,7 +67,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 children: [
                   const Text('LOGO HERE'),
                   const AuthHeader(text: 'Sign in to Trail Sync'),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 44),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: CustomFormTextField(

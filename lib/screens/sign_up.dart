@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:icons_plus/icons_plus.dart';
-import 'package:trail_sync/screens/auth_header.dart';
+import 'package:trail_sync/widgets/auth_header.dart';
 
 import 'package:trail_sync/widgets/custom_button.dart';
 import 'package:trail_sync/widgets/custom_form_text_field.dart';
@@ -73,7 +73,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 children: [
                   const Text('LOGO HERE'),
                   const AuthHeader(text: 'Create your Trail Sync account'),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 44),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: CustomFormTextField(
