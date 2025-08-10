@@ -25,13 +25,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isSigningIn = state.uri.path == '/sign_in';
       final isSigningUp = state.uri.path == '/sign_up';
 
+      final goingTo = state.uri.toString();
+
       if (user == null) {
+        print("user is null, going to: $goingTo");
+
         if (isSigningIn || isSigningUp) return null;
 
         return '/sign_in';
       }
 
-      if (isSigningIn || isSigningUp) return '/home';
+      if (isSigningIn || isSigningUp) {
+        print("user is set, going to: $goingTo");
+
+        return '/home';
+      }
 
       return null;
     },
@@ -54,7 +62,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: 'home',
+                path: '/home',
                 name: 'home',
                 builder: (context, state) => const HomeScreen(),
               ),
@@ -63,7 +71,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: 'activity',
+                path: '/activity',
                 name: 'activity',
                 builder: (context, state) => const ActivityScreen(),
               ),
@@ -72,7 +80,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: 'groups',
+                path: '/groups',
                 name: 'groups',
                 builder: (context, state) => const GroupsScreen(),
               ),
@@ -81,7 +89,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: 'profile',
+                path: '/profile',
                 name: 'profile',
                 builder: (context, state) => const ProfileScreen(),
               ),
@@ -90,8 +98,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
     ],
-    errorBuilder: (_, state) =>
-        const Scaffold(body: Center(child: Text('Page not found'))),
+    errorBuilder: (_, state) {
+      print("Unknown route: ${state.uri}");
+
+      return const Scaffold(body: Center(child: Text('Page not found')));
+    },
   );
 });
 
