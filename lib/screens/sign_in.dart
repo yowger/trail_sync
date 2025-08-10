@@ -1,34 +1,82 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:icons_plus/icons_plus.dart';
 
+import 'package:trail_sync/providers/auth_provider.dart';
 import 'package:trail_sync/widgets/custom_button.dart';
 import 'package:trail_sync/widgets/custom_form_text_field.dart';
 import 'package:trail_sync/widgets/auth_header.dart';
+import 'package:trail_sync/widgets/floating_snackbar.dart';
 import 'package:trail_sync/widgets/text_divider.dart';
 
-class SignInScreen extends StatefulWidget {
+class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
 
   @override
-  State<SignInScreen> createState() => _SignInScreenState();
+  ConsumerState<SignInScreen> createState() => _SignInScreenState();
 }
 
-class _SignInScreenState extends State<SignInScreen> {
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  final focusEmail = FocusNode();
-  final focusPassword = FocusNode();
+class _SignInScreenState extends ConsumerState<SignInScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _focusEmail = FocusNode();
+  final _focusPassword = FocusNode();
 
-  bool isPasswordVisible = false;
+  bool _isPasswordVisible = false;
+  bool _isLoading = false;
 
-  void _validateAndLogin() {
-    final isValid = _formKey.currentState!.validate();
-    if (!isValid) return;
+  Future<void> _validateAndLogin() async {
+    if (!_formKey.currentState!.validate()) return;
 
-    // debugPrint("Logging in with ${emailController.text}");
-    context.goNamed('home');
+    setState(() => _isLoading = true);
+
+    try {
+      await ref
+          .read(firebaseAuthProvider)
+          .signInWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
+
+      context.goNamed('home');
+    } on FirebaseAuthException catch (error) {
+      String errorMessage;
+
+      switch (error.code) {
+        case 'invalid-email':
+          errorMessage = 'The email address is badly formatted.';
+          break;
+        case 'user-disabled':
+          errorMessage = 'This account has been disabled. Contact support.';
+          break;
+        case 'user-not-found':
+          errorMessage = 'No account found for that email.';
+          break;
+        case 'wrong-password':
+          errorMessage = 'Incorrect password. Please try again.';
+          break;
+        case 'too-many-requests':
+          errorMessage = 'Too many failed attempts. Please try again later.';
+          break;
+        case 'network-request-failed':
+          errorMessage = 'Network error. Please check your connection.';
+          break;
+        default:
+          errorMessage = error.message ?? 'Authentication failed.';
+          break;
+      }
+
+      ScaffoldMessenger.of(context).clearSnackBars();
+      showFloatingSnackBar(context, errorMessage);
+    } catch (e) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      showFloatingSnackBar(context, 'An unexpected error occurred');
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   void _loginWithGoogle() {
@@ -45,10 +93,10 @@ class _SignInScreenState extends State<SignInScreen> {
 
   @override
   void dispose() {
-    emailController.dispose();
-    passwordController.dispose();
-    focusEmail.dispose();
-    focusPassword.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _focusEmail.dispose();
+    _focusPassword.dispose();
     super.dispose();
   }
 
@@ -68,11 +116,12 @@ class _SignInScreenState extends State<SignInScreen> {
                   const Text('LOGO HERE'),
                   const AuthHeader(text: 'Sign in to Trail Sync'),
                   const SizedBox(height: 44),
+
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: CustomFormTextField(
-                      controller: emailController,
-                      focusNode: focusEmail,
+                      controller: _emailController,
+                      focusNode: _focusEmail,
                       hintText: 'Email',
                       icon: Icons.email,
                       obscure: false,
@@ -92,47 +141,49 @@ class _SignInScreenState extends State<SignInScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  StatefulBuilder(
-                    builder: (context, setStateSB) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: CustomFormTextField(
-                          controller: passwordController,
-                          focusNode: focusPassword,
-                          hintText: 'Password',
-                          icon: Icons.key,
-                          obscure: true,
-                          isPasswordVisible: isPasswordVisible,
-                          onToggleVisibility: () {
-                            setStateSB(() {
-                              isPasswordVisible = !isPasswordVisible;
-                            });
-                          },
-                          textInputAction: TextInputAction.done,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Password is required';
-                            }
-                            return null;
-                          },
-                        ),
-                      );
-                    },
+
+                  // Password field
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: CustomFormTextField(
+                      controller: _passwordController,
+                      focusNode: _focusPassword,
+                      hintText: 'Password',
+                      icon: Icons.key,
+                      obscure: !_isPasswordVisible,
+                      isPasswordVisible: _isPasswordVisible,
+                      onToggleVisibility: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
+                      textInputAction: TextInputAction.done,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Password is required';
+                        }
+                        return null;
+                      },
+                    ),
                   ),
                   const SizedBox(height: 32),
+
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: CustomButton(
-                      text: 'Login',
+                      text: _isLoading ? 'Logging in...' : 'Login',
                       onPressed: _validateAndLogin,
+                      isDisabled: _isLoading,
                     ),
                   ),
+
                   const SizedBox(height: 25),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: TextDivider(label: 'Or continue with'),
                   ),
                   const SizedBox(height: 20),
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
@@ -154,6 +205,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     ],
                   ),
                   const SizedBox(height: 20),
+
                   _HaveAccount(onTap: () => context.goNamed('sign_up')),
                 ],
               ),

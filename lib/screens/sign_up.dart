@@ -1,22 +1,25 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:icons_plus/icons_plus.dart';
-import 'package:trail_sync/widgets/auth_header.dart';
+import 'package:trail_sync/providers/auth_provider.dart';
 
+import 'package:trail_sync/widgets/auth_header.dart';
 import 'package:trail_sync/widgets/custom_button.dart';
 import 'package:trail_sync/widgets/custom_form_text_field.dart';
+import 'package:trail_sync/widgets/floating_snackbar.dart';
 import 'package:trail_sync/widgets/text_divider.dart';
 
-class SignUpScreen extends StatefulWidget {
+class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
 
   @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
+  ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _SignUpScreenState extends State<SignUpScreen> {
+class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
-
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
@@ -26,12 +29,51 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final focusConfirmPassword = FocusNode();
 
   bool isPasswordVisible = false;
+  bool _isLoading = false;
 
-  void _validateAndSignUp() {
+  void _validateAndSignUp() async {
     final isValid = _formKey.currentState!.validate();
     if (!isValid) return;
 
-    debugPrint("Registering: ${emailController.text}");
+    try {
+      await ref
+          .read(firebaseAuthProvider)
+          .createUserWithEmailAndPassword(
+            email: emailController.text.trim(),
+            password: passwordController.text.trim(),
+          );
+
+      context.goNamed('home');
+    } on FirebaseAuthException catch (error) {
+      String errorMessage;
+
+      switch (error.code) {
+        case 'email-already-in-use':
+          errorMessage = 'This email is already registered.';
+          break;
+        case 'invalid-email':
+          errorMessage = 'Please enter a valid email.';
+          break;
+        case 'weak-password':
+          errorMessage = 'Password must be at least 6 characters.';
+          break;
+        case 'operation-not-allowed':
+          errorMessage = 'Email/password accounts are not enabled.';
+          break;
+        default:
+          errorMessage = 'Authentication failed. Please try again.';
+      }
+
+      setState(() => _isLoading = true);
+
+      ScaffoldMessenger.of(context).clearSnackBars();
+      showFloatingSnackBar(context, errorMessage);
+    } catch (e) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      showFloatingSnackBar(context, 'An unexpected error occurred');
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   void _signUpWithGoogle() {
