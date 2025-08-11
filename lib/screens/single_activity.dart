@@ -10,17 +10,29 @@ class SingleActivityScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final liveLocation = ref.watch(locationStreamProvider);
     final mode = ref.watch(activityModeProvider);
+    final isPaused = ref.watch(isPausedProvider);
 
-    void startActivity(String mode) {
-      final service = ref.read(locationServiceProvider);
-      ref.read(activityModeProvider.notifier).state = mode;
-      service.startTracking(mode);
+    final service = ref.read(locationServiceProvider);
+
+    void start(String m) {
+      ref.read(activityModeProvider.notifier).state = m;
+      service.startTracking(m);
     }
 
-    void stopActivity() {
-      final service = ref.read(locationServiceProvider);
-      ref.read(activityModeProvider.notifier).state = null;
+    void pause() {
+      service.pauseTracking();
+      ref.read(isPausedProvider.notifier).state = true;
+    }
+
+    void resume() {
+      service.resumeTracking();
+      ref.read(isPausedProvider.notifier).state = false;
+    }
+
+    void stop() {
       service.stopTracking();
+      ref.read(activityModeProvider.notifier).state = null;
+      ref.read(isPausedProvider.notifier).state = false;
     }
 
     return Scaffold(
@@ -30,29 +42,34 @@ class SingleActivityScreen extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (liveLocation.hasValue) ...[
+            if (liveLocation.hasValue)
               Text(
                 "Lat: ${liveLocation.value!['lat']}, Lng: ${liveLocation.value!['lng']}",
                 style: const TextStyle(fontSize: 18),
-              ),
-              Text("Mode: ${mode ?? 'none'}"),
-            ] else
+              )
+            else
               const Text("Waiting for location..."),
-
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => startActivity('running'),
-              child: const Text("Start Running"),
-            ),
-            ElevatedButton(
-              onPressed: () => startActivity('cycling'),
-              child: const Text("Start Cycling"),
-            ),
-            ElevatedButton(
-              onPressed: () => startActivity('walking'),
-              child: const Text("Start Walking"),
-            ),
-            ElevatedButton(onPressed: stopActivity, child: const Text("Stop")),
+            if (mode == null) ...[
+              ElevatedButton(
+                onPressed: () => start('running'),
+                child: const Text("Start Running"),
+              ),
+              ElevatedButton(
+                onPressed: () => start('cycling'),
+                child: const Text("Start Cycling"),
+              ),
+              ElevatedButton(
+                onPressed: () => start('walking'),
+                child: const Text("Start Walking"),
+              ),
+            ] else ...[
+              if (!isPaused)
+                ElevatedButton(onPressed: pause, child: const Text("Pause"))
+              else
+                ElevatedButton(onPressed: resume, child: const Text("Resume")),
+              ElevatedButton(onPressed: stop, child: const Text("Stop")),
+            ],
           ],
         ),
       ),

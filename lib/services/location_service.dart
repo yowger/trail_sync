@@ -12,6 +12,7 @@ class LocationService {
   }
 
   String? _currentMode;
+  bool _isPaused = false;
   List<Map<String, dynamic>> _currentSession = [];
 
   final _locationStreamController =
@@ -21,6 +22,8 @@ class LocationService {
 
   Future<void> init() async {
     bg.BackgroundGeolocation.onLocation((bg.Location location) {
+      if (_isPaused) return;
+
       final point = {
         'lat': location.coords.latitude,
         'lng': location.coords.longitude,
@@ -39,8 +42,8 @@ class LocationService {
       bg.Config(
         desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
         distanceFilter: 10,
-        stopOnTerminate: false,
-        startOnBoot: true,
+        stopOnTerminate: true,
+        startOnBoot: false,
         debug: true,
         logLevel: bg.Config.LOG_LEVEL_VERBOSE,
       ),
@@ -83,16 +86,29 @@ class LocationService {
   Future<void> startTracking(String mode) async {
     await setMode(mode);
     _currentSession.clear();
-
+    _isPaused = false;
+    await bg.BackgroundGeolocation.setConfig(bg.Config(startOnBoot: true));
     await bg.BackgroundGeolocation.start();
+  }
+
+  Future<void> pauseTracking() async {
+    _isPaused = true;
+    print("Tracking paused.");
+  }
+
+  Future<void> resumeTracking() async {
+    _isPaused = false;
+    print("Tracking resumed.");
   }
 
   Future<void> stopTracking() async {
     await bg.BackgroundGeolocation.stop();
-
+    await bg.BackgroundGeolocation.setConfig(bg.Config(startOnBoot: false));
     print("Session ended: $_currentSession");
   }
 
   List<Map<String, dynamic>> get currentSession =>
       List.unmodifiable(_currentSession);
+
+  bool get isPaused => _isPaused;
 }

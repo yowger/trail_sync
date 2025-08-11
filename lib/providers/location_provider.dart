@@ -8,10 +8,9 @@ final locationServiceProvider = Provider<LocationService>((ref) {
 final activityModeProvider = StateProvider<String?>((ref) => null);
 
 final locationStreamProvider = StreamProvider<Map<String, dynamic>>((ref) {
-  final service = ref.watch(locationServiceProvider);
-  return service.locationStream;
+  return ref.watch(locationServiceProvider).locationStream;
 });
 
-final sessionPointsProvider = StateProvider<List<Map<String, dynamic>>>(
-  (ref) => [],
-);
+final isPausedProvider = StateProvider<bool>((ref) {
+  return ref.watch(locationServiceProvider).isPaused;
+});
