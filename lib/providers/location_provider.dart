@@ -14,3 +14,8 @@ final locationStreamProvider = StreamProvider<Map<String, dynamic>>((ref) {
 final isPausedProvider = StateProvider<bool>((ref) {
   return ref.watch(locationServiceProvider).isPaused;
 });
+
+final isTrackingProvider = StreamProvider<bool>((ref) {
+  final service = ref.watch(locationServiceProvider);
+  return service.isTrackingStream;
+});

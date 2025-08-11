@@ -1,18 +1,31 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'package:trail_sync/providers/location_provider.dart';
 
-class SingleActivityScreen extends ConsumerWidget {
+class SingleActivityScreen extends ConsumerStatefulWidget {
   const SingleActivityScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SingleActivityScreen> createState() =>
+      _SingleActivityScreenState();
+}
+
+class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
+  final Completer<MapLibreMapController> mapController = Completer();
+
+  @override
+  Widget build(BuildContext context) {
     final liveLocation = ref.watch(locationStreamProvider);
     final mode = ref.watch(activityModeProvider);
     final isPaused = ref.watch(isPausedProvider);
-
     final service = ref.read(locationServiceProvider);
+    final selectedMode = ref.watch(activityModeProvider) ?? "running";
+    final isTrackingAsync = ref.watch(isTrackingProvider);
+    final isTracking = isTrackingAsync.value ?? false;
 
     void start(String m) {
       ref.read(activityModeProvider.notifier).state = m;
@@ -36,43 +49,160 @@ class SingleActivityScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Activity Tracker")),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (liveLocation.hasValue)
-              Text(
-                "Lat: ${liveLocation.value!['lat']}, Lng: ${liveLocation.value!['lng']}",
-                style: const TextStyle(fontSize: 18),
-              )
-            else
-              const Text("Waiting for location..."),
-            const SizedBox(height: 20),
-            if (mode == null) ...[
-              ElevatedButton(
-                onPressed: () => start('running'),
-                child: const Text("Start Running"),
+      body: Column(
+        children: [
+          Expanded(
+            child: MapLibreMap(
+              onMapCreated: (controller) => mapController.complete(controller),
+              initialCameraPosition: CameraPosition(
+                target: LatLng(14.5995, 120.9842),
+                zoom: 17,
               ),
-              ElevatedButton(
-                onPressed: () => start('cycling'),
-                child: const Text("Start Cycling"),
-              ),
-              ElevatedButton(
-                onPressed: () => start('walking'),
-                child: const Text("Start Walking"),
-              ),
-            ] else ...[
-              if (!isPaused)
-                ElevatedButton(onPressed: pause, child: const Text("Pause"))
-              else
-                ElevatedButton(onPressed: resume, child: const Text("Resume")),
-              ElevatedButton(onPressed: stop, child: const Text("Stop")),
-            ],
-          ],
-        ),
+              myLocationEnabled: true,
+              styleString:
+                  "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
+            ),
+          ),
+
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              border: const Border(top: BorderSide(color: Colors.grey)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!isTracking) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      InkWell(
+                        onTap: () async {
+                          final chosen = await showActivityModePicker(context);
+
+                          if (chosen != null) {
+                            ref.read(activityModeProvider.notifier).state =
+                                chosen;
+                          }
+                        },
+                        child: CircleAvatar(
+                          radius: 32,
+                          backgroundColor: Colors.blueGrey,
+                          child: Icon(
+                            getActivityIcon(selectedMode),
+                            size: 32,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      InkWell(
+                        onTap: () {
+                          start(selectedMode);
+                        },
+                        child: const CircleAvatar(
+                          radius: 32,
+                          backgroundColor: Colors.green,
+                          child: Icon(
+                            Icons.play_arrow,
+                            size: 32,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ] else ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: isPaused ? resume : pause,
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            backgroundColor: isPaused
+                                ? Colors.orange
+                                : Colors.amber,
+                          ),
+                          child: Text(
+                            isPaused ? "Resume" : "Pause",
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: stop,
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            backgroundColor: Colors.red,
+                          ),
+                          child: const Text(
+                            "Stop",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+IconData getActivityIcon(String mode) {
+  switch (mode) {
+    case "running":
+      return Icons.directions_run;
+    case "cycling":
+      return Icons.directions_bike;
+    case "walking":
+      return Icons.directions_walk;
+    default:
+      return Icons.help_outline; // fallback
+  }
+}
+
+Future<String?> showActivityModePicker(BuildContext context) {
+  return showModalBottomSheet<String>(
+    context: context,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    builder: (context) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.directions_run),
+            title: const Text("Run"),
+            onTap: () => Navigator.pop(context, "running"),
+          ),
+          ListTile(
+            leading: const Icon(Icons.directions_bike),
+            title: const Text("Cycle"),
+            onTap: () => Navigator.pop(context, "cycling"),
+          ),
+          ListTile(
+            leading: const Icon(Icons.directions_walk),
+            title: const Text("Walk"),
+            onTap: () => Navigator.pop(context, "walking"),
+          ),
+        ],
+      );
+    },
+  );
 }

@@ -13,8 +13,12 @@ class LocationService {
 
   String? _currentMode;
   bool _isPaused = false;
+  bool _isTracking = false;
   List<Map<String, dynamic>> _currentSession = [];
 
+  Stream<bool> get isTrackingStream => _isTrackingController.stream;
+
+  final _isTrackingController = StreamController<bool>.broadcast();
   final _locationStreamController =
       StreamController<Map<String, dynamic>>.broadcast();
   Stream<Map<String, dynamic>> get locationStream =>
@@ -87,6 +91,8 @@ class LocationService {
     await setMode(mode);
     _currentSession.clear();
     _isPaused = false;
+    _isTracking = true;
+    _isTrackingController.add(true);
     await bg.BackgroundGeolocation.setConfig(bg.Config(startOnBoot: true));
     await bg.BackgroundGeolocation.start();
   }
@@ -104,6 +110,8 @@ class LocationService {
   Future<void> stopTracking() async {
     await bg.BackgroundGeolocation.stop();
     await bg.BackgroundGeolocation.setConfig(bg.Config(startOnBoot: false));
+    _isTracking = false;
+    _isTrackingController.add(false);
     print("Session ended: $_currentSession");
   }
 
@@ -111,4 +119,5 @@ class LocationService {
       List.unmodifiable(_currentSession);
 
   bool get isPaused => _isPaused;
+  bool get isTracking => _isTracking;
 }
