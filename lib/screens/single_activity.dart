@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
@@ -52,63 +51,135 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
       body: Column(
         children: [
           Expanded(
-            child: MapLibreMap(
-              onMapCreated: (controller) => mapController.complete(controller),
-              initialCameraPosition: CameraPosition(
-                target: LatLng(14.5995, 120.9842),
-                zoom: 17,
-              ),
-              myLocationEnabled: true,
-              styleString:
-                  "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
+            child: Stack(
+              children: [
+                MapLibreMap(
+                  onMapCreated: (controller) =>
+                      mapController.complete(controller),
+                  initialCameraPosition: const CameraPosition(
+                    target: LatLng(14.5995, 120.9842),
+                    zoom: 17,
+                  ),
+                  myLocationEnabled: true,
+                  styleString:
+                      "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
+                ),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                      bottom: 10,
+                      left: 16,
+                      right: 16,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _statItem("Time", "00:32:10"),
+                          _statItem("Distance", "5.3 km"),
+                          _statItem("Speed", "10.2 km/h"),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              border: const Border(top: BorderSide(color: Colors.grey)),
-            ),
+            decoration: BoxDecoration(color: Colors.grey.shade100),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (!isTracking) ...[
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       InkWell(
                         onTap: () async {
                           final chosen = await showActivityModePicker(context);
-
                           if (chosen != null) {
                             ref.read(activityModeProvider.notifier).state =
                                 chosen;
                           }
                         },
-                        child: CircleAvatar(
-                          radius: 32,
-                          backgroundColor: Colors.blueGrey,
-                          child: Icon(
-                            getActivityIcon(selectedMode),
-                            size: 32,
-                            color: Colors.white,
-                          ),
+                        child: Column(
+                          children: [
+                            CircleAvatar(
+                              radius: 32,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primary.withValues(alpha: 0.25),
+                              child: Icon(
+                                getActivityIcon(selectedMode),
+                                size: 28,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              getModeLabel(selectedMode),
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 20),
-                      InkWell(
-                        onTap: () {
-                          start(selectedMode);
-                        },
-                        child: const CircleAvatar(
-                          radius: 32,
-                          backgroundColor: Colors.green,
-                          child: Icon(
-                            Icons.play_arrow,
-                            size: 32,
-                            color: Colors.white,
+                      Column(
+                        children: [
+                          InkWell(
+                            onTap: () => start(selectedMode),
+                            child: CircleAvatar(
+                              radius: 32,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
+                              child: const Icon(
+                                Icons.play_arrow,
+                                size: 45,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
+                          const SizedBox(height: 8),
+                          const Text("Start", style: TextStyle(fontSize: 14)),
+                        ],
+                      ),
+                      InkWell(
+                        onTap: () {},
+                        child: Column(
+                          children: [
+                            CircleAvatar(
+                              radius: 32,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primary.withValues(alpha: 0.25),
+                              child: Icon(
+                                Icons.polyline,
+                                size: 28,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              "Add Route",
+                              style: TextStyle(fontSize: 14),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -163,10 +234,23 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
   }
 }
 
+Widget _statItem(String label, String value) {
+  return Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(
+        value,
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      ),
+      Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+    ],
+  );
+}
+
 IconData getActivityIcon(String mode) {
   switch (mode) {
     case "running":
-      return Icons.directions_run;
+      return Icons.directions_run_outlined;
     case "cycling":
       return Icons.directions_bike;
     case "walking":
@@ -205,4 +289,17 @@ Future<String?> showActivityModePicker(BuildContext context) {
       );
     },
   );
+}
+
+String getModeLabel(String mode) {
+  switch (mode) {
+    case 'running':
+      return 'Run';
+    case 'walking':
+      return 'Walk';
+    case 'cycling':
+      return 'Cycle';
+    default:
+      return mode;
+  }
 }
