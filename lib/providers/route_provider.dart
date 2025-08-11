@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'package:trail_sync/providers/auth_provider.dart';
 import 'package:trail_sync/screens/home.dart';
+import 'package:trail_sync/screens/save_run.dart';
 import 'package:trail_sync/screens/sign_in.dart';
 import 'package:trail_sync/screens/activity.dart';
 import 'package:trail_sync/screens/groups.dart';
@@ -54,6 +55,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'sign_up',
         path: '/sign_up',
         builder: (_, __) => const SignUpScreen(),
+      ),
+      GoRoute(
+        path: '/activity/save_run',
+        name: 'save_run',
+        builder: (context, state) {
+          return const SaveRunScreen();
+        },
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

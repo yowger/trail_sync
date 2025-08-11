@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'package:trail_sync/providers/location_provider.dart';
@@ -42,7 +43,7 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
       ref.read(isPausedProvider.notifier).state = false;
     }
 
-    void stop() {
+    void finish() {
       service.stopTracking();
       ref.read(activityModeProvider.notifier).state = null;
       ref.read(isPausedProvider.notifier).state = false;
@@ -58,6 +59,56 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
             16,
           ),
         );
+      }
+    }
+
+    void stopTracking() {
+      service.stopTracking();
+      ref.read(activityModeProvider.notifier).state = null;
+      ref.read(isPausedProvider.notifier).state = false;
+    }
+
+    void saveActivity(String name, String description) {
+      // Implement your save logic here, e.g., send to backend or local DB
+      print('Saving activity: $name - $description');
+      stopTracking();
+    }
+
+    Future<void> showFinishDialog(BuildContext context) async {
+      final save = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Finish Activity'),
+          content: const Text('Do you want to save your activity?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Discard'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      );
+
+      if (save == true) {
+        final result = await GoRouter.of(
+          context,
+        ).push<Map<String, String>>('/activity/save_run');
+        if (result != null) {
+          final runName = result['name'] ?? 'Unnamed run';
+          final runDesc = result['description'] ?? '';
+          // Save activity here with the runName and runDesc
+          saveActivity(runName, runDesc);
+        } else {
+          // User canceled save screen, maybe just stop tracking anyway
+          stopTracking();
+        }
+      } else {
+        // User chose discard, just stop tracking
+        stopTracking();
       }
     }
 
@@ -221,42 +272,59 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
                   ),
                 ] else ...[
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: isPaused ? resume : pause,
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(50),
-                            backgroundColor: isPaused
-                                ? Colors.orange
-                                : Colors.amber,
-                          ),
-                          child: Text(
-                            isPaused ? "Resume" : "Pause",
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                      InkWell(
+                        onTap: isPaused ? resume : pause,
+                        child: Column(
+                          children: [
+                            CircleAvatar(
+                              radius: 32,
+                              backgroundColor: isPaused
+                                  ? Colors.orange
+                                  : Colors.amber,
+                              child: Icon(
+                                isPaused ? Icons.play_arrow : Icons.pause,
+                                size: 32,
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
+                            const SizedBox(height: 8),
+                            Text(
+                              isPaused ? "Resume" : "Pause",
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: stop,
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(50),
-                            backgroundColor: Colors.red,
-                          ),
-                          child: const Text(
-                            "Stop",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                      if (isPaused)
+                        InkWell(
+                          onTap: () => showFinishDialog(context),
+                          child: Column(
+                            children: [
+                              CircleAvatar(
+                                radius: 32,
+                                backgroundColor: Colors.red,
+                                child: const Icon(
+                                  Icons.stop,
+                                  size: 32,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                "Finish",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ],
