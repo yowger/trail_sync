@@ -15,6 +15,7 @@ class SingleActivityScreen extends ConsumerStatefulWidget {
 
 class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
   final Completer<MapLibreMapController> mapController = Completer();
+  MapLibreMapController? _controller;
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +48,19 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
       ref.read(isPausedProvider.notifier).state = false;
     }
 
+    Future<void> moveToCurrentLocation() async {
+      final location = await service.getCurrentLocation();
+
+      if (location != null && _controller != null) {
+        _controller!.moveCamera(
+          CameraUpdate.newLatLngZoom(
+            LatLng(location.coords.latitude, location.coords.longitude),
+            16,
+          ),
+        );
+      }
+    }
+
     return Scaffold(
       body: Column(
         children: [
@@ -54,21 +68,42 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
             child: Stack(
               children: [
                 MapLibreMap(
-                  onMapCreated: (controller) =>
-                      mapController.complete(controller),
+                  onMapCreated: (controller) {
+                    mapController.complete(controller);
+                    _controller = controller;
+                  },
                   initialCameraPosition: const CameraPosition(
                     target: LatLng(14.5995, 120.9842),
-                    zoom: 17,
+                    zoom: 16,
                   ),
                   myLocationEnabled: true,
                   styleString:
                       "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
                 ),
+
+                Positioned(
+                  bottom: 95,
+                  right: 16,
+                  child: Column(
+                    children: [
+                      // _mapControlButton(Icons.add, () {
+                      //   // Zoom in placeholder
+                      // }),
+                      const SizedBox(height: 8),
+                      _mapControlButton(Icons.explore, () {}),
+                      const SizedBox(height: 8),
+                      _mapControlButton(Icons.my_location, () async {
+                        await moveToCurrentLocation();
+                      }),
+                    ],
+                  ),
+                ),
+
                 Align(
                   alignment: Alignment.bottomCenter,
                   child: Padding(
                     padding: const EdgeInsets.only(
-                      bottom: 10,
+                      bottom: 15,
                       left: 16,
                       right: 16,
                     ),
@@ -232,6 +267,22 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
       ),
     );
   }
+}
+
+Widget _mapControlButton(IconData icon, VoidCallback onTap) {
+  return Material(
+    color: Colors.white,
+    shape: const CircleBorder(),
+    elevation: 2,
+    child: InkWell(
+      customBorder: const CircleBorder(),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Icon(icon, color: Colors.black87),
+      ),
+    ),
+  );
 }
 
 Widget _statItem(String label, String value) {

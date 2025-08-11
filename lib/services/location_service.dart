@@ -115,6 +115,20 @@ class LocationService {
     print("Session ended: $_currentSession");
   }
 
+  Future<bg.Location?> getCurrentLocation() async {
+    try {
+      final location = await bg.BackgroundGeolocation.getCurrentPosition(
+        persist: false,
+        samples: 1,
+        timeout: 30,
+      );
+      return location;
+    } catch (e) {
+      print('Error getting current location: $e');
+      return null;
+    }
+  }
+
   List<Map<String, dynamic>> get currentSession =>
       List.unmodifiable(_currentSession);
 
