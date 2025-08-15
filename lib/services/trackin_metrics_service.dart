@@ -13,7 +13,7 @@ class TrackingMetricsService {
 
   double? calculateAveragePace(List<LocationPoint> points, Duration elapsed) {
     final km = calculateTotalDistance(points) / 1000;
-    if (km == 0) return null;
+    if (km < 0.1) return null;
     return elapsed.inSeconds / 60 / km;
   }
 

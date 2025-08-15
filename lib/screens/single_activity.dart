@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+
 import 'package:trail_sync/services/trackin_metrics_service.dart';
 import 'package:trail_sync/providers/auth_provider.dart';
-
 import 'package:trail_sync/providers/location_provider.dart';
 
 String _formatDuration(Duration d) {
@@ -31,29 +31,17 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final mode = ref.watch(activityModeProvider);
-    final isPaused = ref.watch(isPausedProvider);
+    final userId = ref.watch(authStateProvider).value?.uid;
     final service = ref.read(locationServiceProvider);
+
     final selectedMode = ref.watch(activityModeProvider) ?? "running";
-    final isTrackingAsync = ref.watch(isTrackingProvider);
-    final isTracking = isTrackingAsync.value ?? false;
+    final isPaused = ref.watch(isPausedProvider);
+    final isTracking = ref.watch(isTrackingProvider).value ?? false;
 
-    //
-    //
-
+    final points = service.currentSession;
+    final duration = ref.watch(movingTimeStreamProvider).value ?? Duration.zero;
     final trackingMetrics = TrackingMetricsService();
-
-    // final points = locationService.currentSession;
-    // final startDate = locationService.startTime;
-    // final endDate = locationService.endTime ?? DateTime.now();
-
-    final locationService = ref.watch(locationServiceProvider);
-    final points = locationService.currentSession;
-    final movingTimeStream = ref.watch(movingTimeStreamProvider);
-
-    final duration = movingTimeStream.value ?? Duration.zero;
-    final distanceMeters =
-        trackingMetrics.calculateTotalDistance(points) ?? 0.0;
+    final distanceMeters = trackingMetrics.calculateTotalDistance(points);
     final avgPace = trackingMetrics.calculateAveragePace(points, duration);
 
     final paceText = (avgPace != null && avgPace.isFinite)
@@ -64,9 +52,9 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
         ? (distanceMeters / 1000).toStringAsFixed(2)
         : "0.00";
 
-    void start(String m) {
-      ref.read(activityModeProvider.notifier).state = m;
-      service.startTracking(m);
+    void start(String mode) {
+      ref.read(activityModeProvider.notifier).state = mode;
+      service.startTracking(mode);
     }
 
     void pause() {
@@ -79,15 +67,18 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
       ref.read(isPausedProvider.notifier).state = false;
     }
 
-    void finish() {
+    void stopTracking() {
       service.stopTracking();
       ref.read(activityModeProvider.notifier).state = null;
       ref.read(isPausedProvider.notifier).state = false;
     }
 
+    void finish() {
+      stopTracking();
+    }
+
     Future<void> moveToCurrentLocation() async {
       final location = await service.getCurrentLocation();
-
       if (location != null && _controller != null) {
         _controller!.moveCamera(
           CameraUpdate.newLatLngZoom(
@@ -98,38 +89,37 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
       }
     }
 
-    void stopTracking() {
-      service.stopTracking();
-      ref.read(activityModeProvider.notifier).state = null;
-      ref.read(isPausedProvider.notifier).state = false;
-    }
-
     void saveActivity(String name, String description) async {
-      final userId = ref.watch(authStateProvider).value?.uid;
       if (userId == null) return;
 
-      // final locationService = ref.read(locationServiceProvider);
-      // final trackingMetrics = TrackingMetricsService();
+      final start = service.startTime;
+      final end = service.endTime ?? DateTime.now();
+      final duration = end.difference(start ?? end);
+      final distanceKm = trackingMetrics.calculateTotalDistance(points) / 1000;
+      final avgPace = trackingMetrics.calculateAveragePace(points, duration);
 
-      // final points = locationService.currentSession;
-      // final start = locationService.startTime;
-      // final end = locationService.endTime ?? DateTime.now();
+      final runData = {
+        'userId': userId,
+        'name': name,
+        'description': description,
+        'startTime': start?.toIso8601String(),
+        'endTime': end.toIso8601String(),
+        'durationSec': duration.inSeconds,
+        'distanceKm': distanceKm,
+        'avgPaceMinPerKm': avgPace,
+        'points': points.map((p) => p.toJson()).toList(),
+      };
 
-      // final duration = end.difference(start ?? end);
-      // final distanceKm = trackingMetrics.calculateTotalDistance(points);
-      // final avgPace = trackingMetrics.calculateAveragePace(points, duration);
+      try {
+        final docRef = await FirebaseFirestore.instance
+            .collection('runs')
+            .add(runData);
 
-      // try {
-      //   final docRef = await FirebaseFirestore.instance
-      //       .collection('runs')
-      //       .add(run.toMap());
-
-      //   await docRef.update({'id': docRef.id});
-
-      //   print('Run saved: ${docRef.id}');
-      // } catch (e) {
-      //   print('Error saving run: $e');
-      // }
+        await docRef.update({'id': docRef.id});
+        print('Run saved: ${docRef.id}');
+      } catch (e) {
+        print('Error saving run: $e');
+      }
 
       stopTracking();
     }
