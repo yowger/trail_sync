@@ -2,38 +2,54 @@ import 'dart:async';
 import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
     as bg;
 
+import 'package:trail_sync/models/location_point.dart';
+
 class LocationService {
   static LocationService? _instance;
   LocationService._internal();
-
   factory LocationService() {
     _instance ??= LocationService._internal();
     return _instance!;
   }
 
   String? _currentMode;
+  DateTime? _startTime;
+  DateTime? _endTime;
+  Timer? _timer;
+
   bool _isPaused = false;
   bool _isTracking = false;
-  List<Map<String, dynamic>> _currentSession = [];
+  Duration _movingElapsed = Duration.zero;
 
-  Stream<bool> get isTrackingStream => _isTrackingController.stream;
+  final List<LocationPoint> _currentSession = [];
 
+  final _totalTimeController = StreamController<Duration>.broadcast();
+  final _movingTimeController = StreamController<Duration>.broadcast();
   final _isTrackingController = StreamController<bool>.broadcast();
-  final _locationStreamController =
-      StreamController<Map<String, dynamic>>.broadcast();
-  Stream<Map<String, dynamic>> get locationStream =>
-      _locationStreamController.stream;
+  final _locationStreamController = StreamController<LocationPoint>.broadcast();
+
+  Stream<Duration> get totalTimeStream => _totalTimeController.stream;
+  Stream<Duration> get movingTimeStream => _movingTimeController.stream;
+  Stream<bool> get isTrackingStream => _isTrackingController.stream;
+  Stream<LocationPoint> get locationStream => _locationStreamController.stream;
+
+  bool get isPaused => _isPaused;
+  bool get isTracking => _isTracking;
+  DateTime? get startTime => _startTime;
+  DateTime? get endTime => _endTime;
+  List<LocationPoint> get currentSession => List.unmodifiable(_currentSession);
 
   Future<void> init() async {
     bg.BackgroundGeolocation.onLocation((bg.Location location) {
       if (_isPaused) return;
 
-      final point = {
-        'lat': location.coords.latitude,
-        'lng': location.coords.longitude,
-        'timestamp': location.timestamp,
-        'mode': _currentMode,
-      };
+      final point = LocationPoint(
+        lat: location.coords.latitude,
+        lng: location.coords.longitude,
+        timestamp: DateTime.parse(location.timestamp),
+        mode: _currentMode,
+      );
+
       _currentSession.add(point);
       _locationStreamController.add(point);
     });
@@ -87,12 +103,34 @@ class LocationService {
     }
   }
 
+  void _startDurationTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (_startTime != null) {
+        final total = DateTime.now().difference(_startTime!);
+        _totalTimeController.add(total);
+
+        if (!_isPaused) {
+          _movingElapsed += const Duration(seconds: 1);
+          _movingTimeController.add(_movingElapsed);
+        }
+      }
+    });
+  }
+
   Future<void> startTracking(String mode) async {
     await setMode(mode);
     _currentSession.clear();
+
+    _movingElapsed = Duration.zero;
     _isPaused = false;
     _isTracking = true;
+    _startTime = DateTime.now();
+    _endTime = null;
+
     _isTrackingController.add(true);
+    _startDurationTimer();
+
     await bg.BackgroundGeolocation.setConfig(bg.Config(startOnBoot: true));
     await bg.BackgroundGeolocation.start();
   }
@@ -108,11 +146,15 @@ class LocationService {
   }
 
   Future<void> stopTracking() async {
-    await bg.BackgroundGeolocation.stop();
-    await bg.BackgroundGeolocation.setConfig(bg.Config(startOnBoot: false));
+    _timer?.cancel();
+    _endTime = DateTime.now();
     _isTracking = false;
     _isTrackingController.add(false);
-    print("Session ended: $_currentSession");
+
+    await bg.BackgroundGeolocation.stop();
+    await bg.BackgroundGeolocation.setConfig(bg.Config(startOnBoot: false));
+
+    print("Session ended: ${_currentSession.map((e) => e.toJson()).toList()}");
   }
 
   Future<bg.Location?> getCurrentLocation() async {
@@ -129,9 +171,11 @@ class LocationService {
     }
   }
 
-  List<Map<String, dynamic>> get currentSession =>
-      List.unmodifiable(_currentSession);
-
-  bool get isPaused => _isPaused;
-  bool get isTracking => _isTracking;
+  void dispose() {
+    _timer?.cancel();
+    _totalTimeController.close();
+    _movingTimeController.close();
+    _isTrackingController.close();
+    _locationStreamController.close();
+  }
 }

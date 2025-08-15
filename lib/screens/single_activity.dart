@@ -1,10 +1,21 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:trail_sync/services/trackin_metrics_service.dart';
+import 'package:trail_sync/providers/auth_provider.dart';
 
 import 'package:trail_sync/providers/location_provider.dart';
+
+String _formatDuration(Duration d) {
+  String twoDigits(int n) => n.toString().padLeft(2, "0");
+  final hours = twoDigits(d.inHours);
+  final minutes = twoDigits(d.inMinutes.remainder(60));
+  final seconds = twoDigits(d.inSeconds.remainder(60));
+  return "$hours:$minutes:$seconds";
+}
 
 class SingleActivityScreen extends ConsumerStatefulWidget {
   const SingleActivityScreen({super.key});
@@ -20,13 +31,28 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final liveLocation = ref.watch(locationStreamProvider);
     final mode = ref.watch(activityModeProvider);
     final isPaused = ref.watch(isPausedProvider);
     final service = ref.read(locationServiceProvider);
     final selectedMode = ref.watch(activityModeProvider) ?? "running";
     final isTrackingAsync = ref.watch(isTrackingProvider);
     final isTracking = isTrackingAsync.value ?? false;
+
+    //
+    //
+
+    // final locationService = ref.watch(locationServiceProvider);
+    // final trackingMetrics = TrackingMetricsService();
+
+    // final points = locationService.currentSession;
+    // final startDate = locationService.startTime;
+    // final endDate = locationService.endTime ?? DateTime.now();
+
+    final movingTimeStream = ref.watch(movingTimeStreamProvider);
+
+    final duration = movingTimeStream.value ?? Duration.zero;
+    // final distance = trackingMetrics.calculateTotalDistance(points);
+    // final avgPace = trackingMetrics.calculateAveragePace(points, duration);
 
     void start(String m) {
       ref.read(activityModeProvider.notifier).state = m;
@@ -68,9 +94,33 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
       ref.read(isPausedProvider.notifier).state = false;
     }
 
-    void saveActivity(String name, String description) {
-      // Implement your save logic here, e.g., send to backend or local DB
-      print('Saving activity: $name - $description');
+    void saveActivity(String name, String description) async {
+      final userId = ref.watch(authStateProvider).value?.uid;
+      if (userId == null) return;
+
+      final locationService = ref.read(locationServiceProvider);
+      final trackingMetrics = TrackingMetricsService();
+
+      final points = locationService.currentSession;
+      final start = locationService.startTime;
+      final end = locationService.endTime ?? DateTime.now();
+
+      final duration = end.difference(start ?? end);
+      final distance = trackingMetrics.calculateTotalDistance(points);
+      final avgPace = trackingMetrics.calculateAveragePace(points, duration);
+
+      // try {
+      //   final docRef = await FirebaseFirestore.instance
+      //       .collection('runs')
+      //       .add(run.toMap());
+
+      //   await docRef.update({'id': docRef.id});
+
+      //   print('Run saved: ${docRef.id}');
+      // } catch (e) {
+      //   print('Error saving run: $e');
+      // }
+
       stopTracking();
     }
 
@@ -97,6 +147,7 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
         final result = await GoRouter.of(
           context,
         ).push<Map<String, String>>('/activity/save_run');
+
         if (result != null) {
           final runName = result['name'] ?? 'Unnamed run';
           final runDesc = result['description'] ?? '';
@@ -174,7 +225,7 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _statItem("Time", "00:32:10"),
+                          _statItem("Time", _formatDuration(duration)),
                           _statItem("Distance", "5.3 km"),
                           _statItem("Speed", "10.2 km/h"),
                         ],
