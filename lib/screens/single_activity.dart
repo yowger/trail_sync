@@ -44,13 +44,18 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
     final distanceMeters = trackingMetrics.calculateTotalDistance(points);
     final avgPace = trackingMetrics.calculateAveragePace(points, duration);
 
+    Symbol? currentLocationSymbol;
+    Line? _trailLine;
+    List<LatLng> _trailPoints = [];
+    bool _followUser = true;
+
     final paceText = (avgPace != null && avgPace.isFinite)
         ? "${avgPace.toStringAsFixed(1)} min/km"
         : "--";
 
     final distanceKmText = (distanceMeters > 0)
-        ? (distanceMeters / 1000).toStringAsFixed(2)
-        : "0.00";
+        ? "${(distanceMeters / 1000).toStringAsFixed(2)} km"
+        : "0.00 km";
 
     void start(String mode) {
       ref.read(activityModeProvider.notifier).state = mode;
@@ -100,6 +105,7 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
 
       final runData = {
         'userId': userId,
+        'mode': selectedMode,
         'name': name,
         'description': description,
         'startTime': start?.toIso8601String(),
@@ -151,15 +157,36 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
         if (result != null) {
           final runName = result['name'] ?? 'Unnamed run';
           final runDesc = result['description'] ?? '';
-          // Save activity here with the runName and runDesc
+
           saveActivity(runName, runDesc);
         } else {
-          // User canceled save screen, maybe just stop tracking anyway
           stopTracking();
         }
       } else {
-        // User chose discard, just stop tracking
         stopTracking();
+      }
+    }
+
+    //
+
+    Future<void> _updateCurrentLocationMarker(LatLng latLng) async {
+      if (currentLocationSymbol == null) {
+        currentLocationSymbol = await _controller?.addSymbol(
+          SymbolOptions(
+            geometry: latLng,
+            iconImage: "marker-15",
+            iconSize: 1.5,
+          ),
+        );
+      } else {
+        await _controller?.updateSymbol(
+          currentLocationSymbol!,
+          SymbolOptions(geometry: latLng),
+        );
+      }
+
+      if (_followUser) {
+        _controller?.animateCamera(CameraUpdate.newLatLng(latLng));
       }
     }
 
@@ -173,6 +200,30 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
                   onMapCreated: (controller) {
                     mapController.complete(controller);
                     _controller = controller;
+
+                    service.locationStream.listen((loc) async {
+                      final latLng = LatLng(loc.lat, loc.lng);
+
+                      _updateCurrentLocationMarker(latLng);
+
+                      _trailPoints.add(latLng);
+
+                      if (_trailLine == null) {
+                        _trailLine = await _controller?.addLine(
+                          LineOptions(
+                            geometry: _trailPoints,
+                            lineColor: "#ff0000",
+                            lineWidth: 2,
+                            lineOpacity: 0.8,
+                          ),
+                        );
+                      } else {
+                        await _controller?.updateLine(
+                          _trailLine!,
+                          LineOptions(geometry: _trailPoints),
+                        );
+                      }
+                    });
                   },
                   initialCameraPosition: const CameraPosition(
                     target: LatLng(14.5995, 120.9842),
@@ -181,6 +232,9 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
                   myLocationEnabled: true,
                   styleString:
                       "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
+                  compassEnabled: false,
+                  zoomGesturesEnabled: true,
+                  scrollGesturesEnabled: true,
                 ),
 
                 Positioned(
@@ -194,9 +248,19 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
                       const SizedBox(height: 8),
                       _mapControlButton(Icons.explore, () {}),
                       const SizedBox(height: 8),
-                      _mapControlButton(Icons.my_location, () async {
-                        await moveToCurrentLocation();
-                      }),
+
+                      _mapControlButton(
+                        _followUser
+                            ? Icons.location_searching
+                            : Icons.location_disabled,
+                        () {
+                          setState(() {
+                            _followUser = !_followUser;
+                          });
+
+                          moveToCurrentLocation();
+                        },
+                      ),
                     ],
                   ),
                 ),

@@ -138,6 +138,18 @@ class LocationService {
   Future<void> pauseTracking() async {
     _isPaused = true;
     print("Tracking paused.");
+
+    final current = await getCurrentLocation();
+    if (current != null) {
+      _currentSession.add(
+        LocationPoint(
+          lat: current.coords.latitude,
+          lng: current.coords.longitude,
+          timestamp: DateTime.parse(current.timestamp),
+          mode: _currentMode,
+        ),
+      );
+    }
   }
 
   Future<void> resumeTracking() async {
@@ -150,6 +162,18 @@ class LocationService {
     _endTime = DateTime.now();
     _isTracking = false;
     _isTrackingController.add(false);
+
+    final current = await getCurrentLocation();
+    if (current != null) {
+      _currentSession.add(
+        LocationPoint(
+          lat: current.coords.latitude,
+          lng: current.coords.longitude,
+          timestamp: DateTime.parse(current.timestamp),
+          mode: _currentMode,
+        ),
+      );
+    }
 
     await bg.BackgroundGeolocation.stop();
     await bg.BackgroundGeolocation.setConfig(bg.Config(startOnBoot: false));
