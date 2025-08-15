@@ -41,18 +41,28 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
     //
     //
 
-    // final locationService = ref.watch(locationServiceProvider);
-    // final trackingMetrics = TrackingMetricsService();
+    final trackingMetrics = TrackingMetricsService();
 
     // final points = locationService.currentSession;
     // final startDate = locationService.startTime;
     // final endDate = locationService.endTime ?? DateTime.now();
 
+    final locationService = ref.watch(locationServiceProvider);
+    final points = locationService.currentSession;
     final movingTimeStream = ref.watch(movingTimeStreamProvider);
 
     final duration = movingTimeStream.value ?? Duration.zero;
-    // final distance = trackingMetrics.calculateTotalDistance(points);
-    // final avgPace = trackingMetrics.calculateAveragePace(points, duration);
+    final distanceMeters =
+        trackingMetrics.calculateTotalDistance(points) ?? 0.0;
+    final avgPace = trackingMetrics.calculateAveragePace(points, duration);
+
+    final paceText = (avgPace != null && avgPace.isFinite)
+        ? "${avgPace.toStringAsFixed(1)} min/km"
+        : "--";
+
+    final distanceKmText = (distanceMeters > 0)
+        ? (distanceMeters / 1000).toStringAsFixed(2)
+        : "0.00";
 
     void start(String m) {
       ref.read(activityModeProvider.notifier).state = m;
@@ -98,16 +108,16 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
       final userId = ref.watch(authStateProvider).value?.uid;
       if (userId == null) return;
 
-      final locationService = ref.read(locationServiceProvider);
-      final trackingMetrics = TrackingMetricsService();
+      // final locationService = ref.read(locationServiceProvider);
+      // final trackingMetrics = TrackingMetricsService();
 
-      final points = locationService.currentSession;
-      final start = locationService.startTime;
-      final end = locationService.endTime ?? DateTime.now();
+      // final points = locationService.currentSession;
+      // final start = locationService.startTime;
+      // final end = locationService.endTime ?? DateTime.now();
 
-      final duration = end.difference(start ?? end);
-      final distance = trackingMetrics.calculateTotalDistance(points);
-      final avgPace = trackingMetrics.calculateAveragePace(points, duration);
+      // final duration = end.difference(start ?? end);
+      // final distanceKm = trackingMetrics.calculateTotalDistance(points);
+      // final avgPace = trackingMetrics.calculateAveragePace(points, duration);
 
       // try {
       //   final docRef = await FirebaseFirestore.instance
@@ -226,8 +236,8 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           _statItem("Time", _formatDuration(duration)),
-                          _statItem("Distance", "5.3 km"),
-                          _statItem("Speed", "10.2 km/h"),
+                          _statItem("Distance", distanceKmText),
+                          _statItem("Pace", paceText),
                         ],
                       ),
                     ),
