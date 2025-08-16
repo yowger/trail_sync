@@ -5,7 +5,9 @@ import 'package:trail_sync/providers/auth_provider.dart';
 import 'package:intl/intl.dart';
 
 import 'package:trail_sync/providers/run_provider.dart';
-import 'package:trail_sync/screens/weekly_activity_card.dart';
+import 'package:trail_sync/screens/activity_mini_map.dart';
+import 'package:trail_sync/screens/run_details.dart';
+import 'package:trail_sync/widgets/weekly_activity_card.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -78,7 +80,7 @@ class HomeScreen extends ConsumerWidget {
 
             return ListView.separated(
               padding: const EdgeInsets.all(16),
-              itemCount: runs.length + 1, // add 1 for the weekly stats card
+              itemCount: runs.length + 1,
               separatorBuilder: (_, __) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
                 if (index == 0) {
@@ -94,21 +96,31 @@ class HomeScreen extends ConsumerWidget {
                     ? "${run.avgPaceMinPerKm!.toStringAsFixed(2)} min/km"
                     : "-";
 
-                return _ActivityCard(
-                  username: userAsync.maybeWhen(
-                    data: (user) => user?.displayName ?? 'You',
-                    orElse: () => 'You',
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => RunDetailScreen(run: run),
+                      ),
+                    );
+                  },
+                  child: _ActivityCard(
+                    username: userAsync.maybeWhen(
+                      data: (user) => user?.displayName ?? 'You',
+                      orElse: () => 'You',
+                    ),
+                    activityType: run.mode ?? 'Activity',
+                    distance: "${(run.distanceKm ?? 0).toStringAsFixed(2)} km",
+                    duration: _formatDuration(
+                      Duration(seconds: run.durationSec ?? 0),
+                    ),
+                    pace: pace,
+                    date: run.startTime,
+                    trailPoints: run.points
+                        .map((p) => LatLng(p.lat, p.lng))
+                        .toList(),
                   ),
-                  activityType: run.mode ?? 'Activity',
-                  distance: "${(run.distanceKm ?? 0).toStringAsFixed(2)} km",
-                  duration: _formatDuration(
-                    Duration(seconds: run.durationSec ?? 0),
-                  ),
-                  pace: pace,
-                  date: run.startTime,
-                  trailPoints: run.points
-                      .map((p) => LatLng(p.lat, p.lng))
-                      .toList(),
                 );
               },
             );
@@ -164,7 +176,6 @@ class _ActivityCard extends StatelessWidget {
               subtitle: Text('$activityType • $formattedDate'),
             ),
             const SizedBox(height: 8),
-
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -182,6 +193,9 @@ class _ActivityCard extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 8),
+            if (trailPoints.isNotEmpty)
+              ActivityMiniMap(points: trailPoints, height: 120),
           ],
         ),
       ),
