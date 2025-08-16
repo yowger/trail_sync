@@ -5,7 +5,7 @@ import 'package:trail_sync/providers/auth_provider.dart';
 import 'package:intl/intl.dart';
 
 import 'package:trail_sync/providers/run_provider.dart';
-import 'package:trail_sync/screens/activity_mini_map.dart';
+import 'package:trail_sync/widgets/activity_mini_map.dart';
 import 'package:trail_sync/screens/run_details.dart';
 import 'package:trail_sync/widgets/weekly_activity_card.dart';
 
