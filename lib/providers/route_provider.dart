@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 
 import 'package:trail_sync/providers/auth_provider.dart';
+import 'package:trail_sync/screens/create_event_run.dart';
 import 'package:trail_sync/screens/home.dart';
 import 'package:trail_sync/screens/save_run.dart';
 import 'package:trail_sync/screens/sign_in.dart';
@@ -92,7 +93,8 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/groups',
                 name: 'groups',
-                builder: (context, state) => const GroupsScreen(),
+                // builder: (context, state) => const GroupsScreen(),
+                builder: (context, state) => const CreateGroupRunScreen(),
               ),
             ],
           ),
