@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:trail_sync/providers/auth_provider.dart';
+import 'package:trail_sync/screens/map_picker.dart';
 
 class CreateGroupRunScreen extends ConsumerStatefulWidget {
   const CreateGroupRunScreen({super.key});
@@ -182,18 +183,19 @@ class _CreateGroupRunPageState extends ConsumerState<CreateGroupRunScreen> {
               // --- Pick Meeting Location ---
               ElevatedButton.icon(
                 onPressed: () async {
-                  // final pickedLocation = await Navigator.push<LatLng>(
-                  //   context,
-                  //   MaterialPageRoute(
-                  //     builder: (_) => const MeetingLocationPickerPage(),
-                  //   ),
-                  // );
-                  final pickedLocation = null;
+                  final pickedLocation = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MapPickerPage(),
+                    ),
+                  );
                   if (pickedLocation != null) {
+                    final coords = pickedLocation['coords'] as LatLng;
+                    final address = pickedLocation['address'] as String;
+
                     setState(() {
-                      _meetingLocation = pickedLocation;
-                      _meetingAddress =
-                          "Pinned location"; // optionally reverse-geocode
+                      _meetingLocation = coords;
+                      _meetingAddress = address;
                     });
                   }
                 },
