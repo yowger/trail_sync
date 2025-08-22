@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:trail_sync/models/group_event_run.dart';
 import 'package:trail_sync/providers/auth_provider.dart';
 import 'package:trail_sync/screens/map_picker.dart';
+import 'package:trail_sync/services/group_run_service.dart';
 
 class CreateGroupRunScreen extends ConsumerStatefulWidget {
   const CreateGroupRunScreen({super.key});
@@ -14,6 +16,7 @@ class CreateGroupRunScreen extends ConsumerStatefulWidget {
 }
 
 class _CreateGroupRunPageState extends ConsumerState<CreateGroupRunScreen> {
+  MapLibreMapController? _mapController;
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -29,33 +32,36 @@ class _CreateGroupRunPageState extends ConsumerState<CreateGroupRunScreen> {
     if (userId == null) return;
 
     if (_formKey.currentState!.validate()) {
-      final docRef = FirebaseFirestore.instance.collection("events").doc();
+      final service = GroupRunService();
 
-      await docRef.set({
-        "id": docRef.id,
-        "createdBy": userId,
-        "name": _nameController.text.trim(),
-        "description": _descriptionController.text.trim(),
-        "mode": _mode,
-        "startTime": (_startTime ?? DateTime.now()).toIso8601String(),
-        "status": "scheduled",
-        "routeId": _selectedRouteId,
-        "meetingLocation": _meetingLocation != null
-            ? {
-                "lat": _meetingLocation!.latitude,
-                "lng": _meetingLocation!.longitude,
-                "address": _meetingAddress ?? "",
-              }
+      final newEvent = GroupRunEvent(
+        id: FirebaseFirestore.instance.collection("events").doc().id,
+        name: _nameController.text.trim(),
+        description: _descriptionController.text.trim(),
+        createdBy: userId,
+        startTime: _startTime ?? DateTime.now(),
+        status: "scheduled",
+        mode: _mode,
+        distanceTargetKm: null,
+        location: _meetingLocation != null
+            ? EventLocation(
+                lat: _meetingLocation!.latitude,
+                lng: _meetingLocation!.longitude,
+                address: _meetingAddress ?? "",
+              )
             : null,
-        "participants": [
-          {
-            "userId": userId,
-            "status": "joined",
-            "joinedAt": DateTime.now().toIso8601String(),
-          },
+        participants: [
+          // Participant(
+          //   userId: userId,
+          //   status: "ready",
+          //   joinedAt: DateTime.now(),
+          // ),
         ],
-        "createdAt": DateTime.now().toIso8601String(),
-      });
+        visibility: "public",
+        createdAt: DateTime.now(),
+      );
+
+      await service.createEvent(newEvent);
 
       if (mounted) {
         Navigator.pop(context);
@@ -76,16 +82,60 @@ class _CreateGroupRunPageState extends ConsumerState<CreateGroupRunScreen> {
           key: _formKey,
           child: ListView(
             children: [
-              // --- Map Preview ---
               SizedBox(
                 height: 200,
-                // child: _selectedRouteId == null
-                //     ? Center(child: Text("No route selected"))
-                //     : MapPreview(routeId: _selectedRouteId!),
+                child: _meetingLocation == null
+                    ? const Center(child: Text("No meeting location selected"))
+                    : MapLibreMap(
+                        initialCameraPosition: CameraPosition(
+                          target: _meetingLocation!,
+                          zoom: 14,
+                        ),
+                        onMapCreated: (controller) async {
+                          _mapController = controller;
+                        },
+                        onStyleLoadedCallback: () async {
+                          await _mapController!.addSource(
+                            "meeting_source",
+                            GeojsonSourceProperties(
+                              data: {
+                                "type": "FeatureCollection",
+                                "features": [
+                                  {
+                                    "type": "Feature",
+                                    "geometry": {
+                                      "type": "Point",
+                                      "coordinates": [
+                                        _meetingLocation!.longitude,
+                                        _meetingLocation!.latitude,
+                                      ],
+                                    },
+                                  },
+                                ],
+                              },
+                            ),
+                          );
+                          await _mapController!.addLayer(
+                            "meeting_source",
+                            "meeting_layer",
+                            CircleLayerProperties(
+                              circleColor: "#4285F4",
+                              circleOpacity: 0.4,
+                              circleRadius: 12,
+                              circleStrokeColor: "#ffffff",
+                              circleStrokeWidth: 2,
+                            ),
+                          );
+                        },
+                        myLocationEnabled: false,
+                        zoomGesturesEnabled: true,
+                        scrollGesturesEnabled: true,
+                        styleString:
+                            "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
+                      ),
               ),
               const SizedBox(height: 16),
 
-              // --- Event Name ---
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
@@ -97,7 +147,6 @@ class _CreateGroupRunPageState extends ConsumerState<CreateGroupRunScreen> {
               ),
               const SizedBox(height: 16),
 
-              // --- Description ---
               TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(
@@ -108,7 +157,6 @@ class _CreateGroupRunPageState extends ConsumerState<CreateGroupRunScreen> {
               ),
               const SizedBox(height: 16),
 
-              // --- Mode Dropdown ---
               DropdownButtonFormField<String>(
                 value: _mode,
                 items: const [
@@ -124,7 +172,15 @@ class _CreateGroupRunPageState extends ConsumerState<CreateGroupRunScreen> {
               ),
               const SizedBox(height: 16),
 
-              // --- Start Time Picker ---
+              TextFormField(
+                initialValue: _meetingAddress,
+                decoration: const InputDecoration(
+                  labelText: "Meeting Address",
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (val) => _meetingAddress = val,
+              ),
+
               ListTile(
                 title: Text(
                   _startTime == null
