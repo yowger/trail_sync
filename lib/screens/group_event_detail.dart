@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:trail_sync/models/group_event_run.dart';
 
-class EventDetailPage extends StatelessWidget {
+class EventDetailScreen extends StatelessWidget {
   final GroupRunEvent event;
 
-  const EventDetailPage({required this.event, super.key});
+  const EventDetailScreen({required this.event, super.key});
 
   @override
   Widget build(BuildContext context) {

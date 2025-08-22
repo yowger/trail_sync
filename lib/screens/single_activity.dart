@@ -323,13 +323,13 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
                           children: [
                             CircleAvatar(
                               radius: 32,
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.primary.withValues(alpha: 0.25),
+                              backgroundColor: Colors.blue.shade600.withValues(
+                                alpha: 0.25,
+                              ),
                               child: Icon(
                                 getActivityIcon(selectedMode),
                                 size: 28,
-                                color: Theme.of(context).colorScheme.primary,
+                                color: Colors.blue.shade600,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -346,9 +346,7 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
                             onTap: () => start(selectedMode),
                             child: CircleAvatar(
                               radius: 32,
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.primary,
+                              backgroundColor: Colors.blue.shade600,
                               child: const Icon(
                                 Icons.play_arrow,
                                 size: 45,
@@ -366,13 +364,13 @@ class _SingleActivityScreenState extends ConsumerState<SingleActivityScreen> {
                           children: [
                             CircleAvatar(
                               radius: 32,
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.primary.withValues(alpha: 0.25),
+                              backgroundColor: Colors.blue.shade600.withValues(
+                                alpha: 0.25,
+                              ),
                               child: Icon(
                                 Icons.polyline,
                                 size: 28,
-                                color: Theme.of(context).colorScheme.primary,
+                                color: Colors.blue.shade600,
                               ),
                             ),
                             const SizedBox(height: 8),

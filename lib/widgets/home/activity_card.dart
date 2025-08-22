@@ -11,7 +11,6 @@ class ActivityCard extends StatelessWidget {
   final String? pace;
   final List<LatLng> trailPoints;
   final DateTime? date;
-
   const ActivityCard({
     super.key,
     this.activityName,
@@ -23,20 +22,19 @@ class ActivityCard extends StatelessWidget {
     required this.trailPoints,
     this.date,
   });
-
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     String formattedDate = '';
-
+    String formattedTime = '';
     if (date != null) {
       if (date!.year == now.year) {
         formattedDate = DateFormat('MMM d').format(date!);
       } else {
         formattedDate = DateFormat('MMM d, yyyy').format(date!);
       }
+      formattedTime = DateFormat('h:mm a').format(date!);
     }
-
     return Card(
       color: Colors.white,
       elevation: 0.3,
@@ -54,44 +52,76 @@ class ActivityCard extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 16,
-                      backgroundColor: Colors.orange.shade100,
+                      backgroundColor: Colors.blue.shade100,
                       child: Icon(
                         getActivityIcon(activityType),
-                        size: 18,
-                        color: Colors.orange.shade700,
+                        size: 20,
+                        color: Colors.blue.shade700,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Text(
-                      capitalize(activityName ?? "Daily Run"),
+                      capitalize(activityName ?? "Running"),
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 16,
+                        fontSize: 18,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
-                Text(
-                  formattedDate,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w400,
-                    fontSize: 14,
-                    color: Colors.grey[600],
+                if (date != null)
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        size: 16,
+                        color: Colors.grey[600],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        formattedDate,
+                        style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                      ),
+                      const SizedBox(width: 12),
+                      Icon(
+                        Icons.access_time,
+                        size: 16,
+                        color: Colors.grey[600],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        formattedTime,
+                        style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                      ),
+                    ],
                   ),
-                ),
               ],
             ),
             const SizedBox(height: 10),
             Padding(
-              padding: const EdgeInsets.only(left: 40),
+              padding: const EdgeInsets.only(left: 42),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  StatItem(value: duration, label: "Time"),
-                  StatItem(value: distance, unit: "km", label: "Distance"),
-                  StatItem(value: pace ?? "0", unit: "/km", label: "Avg Pace"),
+                  Expanded(
+                    child: StatItem(value: duration, label: "Time"),
+                  ),
+                  Expanded(
+                    child: StatItem(
+                      value: distance,
+                      unit: "km",
+                      label: "Distance",
+                    ),
+                  ),
+                  Expanded(
+                    child: StatItem(
+                      value: pace ?? "0",
+                      unit: "/km",
+                      label: "Avg Pace",
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -107,14 +137,12 @@ class StatItem extends StatelessWidget {
   final String value;
   final String label;
   final String? unit;
-
   const StatItem({
     super.key,
     required this.value,
     required this.label,
     this.unit,
   });
-
   @override
   Widget build(BuildContext context) {
     return Column(

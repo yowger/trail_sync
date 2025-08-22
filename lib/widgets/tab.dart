@@ -20,7 +20,7 @@ class TabScreen extends StatelessWidget {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: navigationShell.currentIndex,
         onTap: _onTap,
-        selectedItemColor: Theme.of(context).colorScheme.primary,
+        selectedItemColor: Colors.blue.shade600,
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
@@ -28,7 +28,7 @@ class TabScreen extends StatelessWidget {
             icon: Icon(Icons.directions_run),
             label: 'Activity',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Groups'),
+          BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Events'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),

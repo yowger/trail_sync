@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+
 import 'package:trail_sync/models/group_event_run.dart';
+import 'package:trail_sync/screens/create_event_run.dart';
 import 'package:trail_sync/services/group_run_service.dart';
-import 'package:intl/intl.dart';
+import 'package:trail_sync/widgets/events/event_cart.dart';
 
 class UpcomingEventsScreen extends StatefulWidget {
   const UpcomingEventsScreen({super.key});
@@ -20,14 +22,26 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
     _eventsFuture = _service.fetchUpcomingEvents();
   }
 
-  String _formatDateTime(DateTime dt) {
-    return DateFormat('MMM dd, yyyy – hh:mm a').format(dt);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Upcoming Group Runs")),
+      appBar: AppBar(
+        title: const Text("Events"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'Create Event',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CreateGroupRunScreen(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: FutureBuilder<List<GroupRunEvent>>(
         future: _eventsFuture,
         builder: (context, snapshot) {
@@ -38,7 +52,9 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
           if (snapshot.hasError) {
             return Center(
               child: InkWell(
-                onTap: () => debugPrint("⚠️ Tapped error: ${snapshot.error}"),
+                onTap: () => setState(() {
+                  _eventsFuture = _service.fetchUpcomingEvents();
+                }),
                 child: Text(
                   "Error fetching events: ${snapshot.error}",
                   style: const TextStyle(color: Colors.red),
@@ -57,41 +73,7 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
             padding: const EdgeInsets.all(16),
             itemCount: events.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final event = events[index];
-              return Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  title: Text(
-                    event.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 4),
-                      Text(event.description),
-                      const SizedBox(height: 4),
-                      Text("Starts: ${_formatDateTime(event.startTime)}"),
-                      if (event.location != null)
-                        Text("Location: ${event.location!.address}"),
-                      Text("Participants: ${event.participants.length}"),
-                    ],
-                  ),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () {
-                    // TODO: navigate to event detail or map
-                  },
-                ),
-              );
-            },
+            itemBuilder: (context, index) => EventCard(event: events[index]),
           );
         },
       ),
