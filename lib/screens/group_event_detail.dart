@@ -2,52 +2,65 @@ import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:trail_sync/models/group_event_run.dart';
 
-class EventDetailScreen extends StatelessWidget {
+class EventDetailScreen extends StatefulWidget {
   final GroupRunEvent event;
 
   const EventDetailScreen({required this.event, super.key});
 
   @override
+  _EventDetailScreenState createState() => _EventDetailScreenState();
+}
+
+class _EventDetailScreenState extends State<EventDetailScreen> {
+  MapLibreMapController? mapController;
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(event.name)),
+      appBar: AppBar(title: Text(widget.event.name)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           // --- Description ---
-          Text(event.description, style: const TextStyle(fontSize: 16)),
+          Text(widget.event.description, style: const TextStyle(fontSize: 16)),
           const SizedBox(height: 16),
 
           // --- Mode & Distance ---
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Mode: ${event.mode}"),
-              if (event.distanceTargetKm != null)
-                Text("Distance: ${event.distanceTargetKm} km"),
+              Text("Mode: ${widget.event.mode}"),
+              if (widget.event.distanceTargetKm != null)
+                Text("Distance: ${widget.event.distanceTargetKm} km"),
             ],
           ),
           const SizedBox(height: 16),
 
           // --- Start Time ---
           Text(
-            "Starts: ${event.startTime.toLocal()}",
+            "Starts: ${widget.event.startTime.toLocal()}",
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
 
           // --- Location ---
-          if (event.location != null) ...[
-            Text("Meeting Point: ${event.location!.address}"),
+          if (widget.event.location != null) ...[
+            Text("Meeting Point: ${widget.event.location!.address}"),
             SizedBox(
               height: 200,
               child: MapLibreMap(
                 initialCameraPosition: CameraPosition(
-                  target: LatLng(event.location!.lat, event.location!.lng),
+                  target: LatLng(
+                    widget.event.location!.lat,
+                    widget.event.location!.lng,
+                  ),
                   zoom: 14,
                 ),
                 onMapCreated: (controller) async {
-                  await controller.addSource(
+                  mapController = controller; // store globally in state
+                },
+                onStyleLoadedCallback: () async {
+                  await mapController!.addSource(
                     "location_source",
                     GeojsonSourceProperties(
                       data: {
@@ -58,8 +71,8 @@ class EventDetailScreen extends StatelessWidget {
                             "geometry": {
                               "type": "Point",
                               "coordinates": [
-                                event.location!.lng,
-                                event.location!.lat,
+                                widget.event.location!.lng,
+                                widget.event.location!.lat,
                               ],
                             },
                           },
@@ -67,7 +80,7 @@ class EventDetailScreen extends StatelessWidget {
                       },
                     ),
                   );
-                  await controller.addLayer(
+                  await mapController!.addLayer(
                     "location_source",
                     "location_layer",
                     CircleLayerProperties(
@@ -90,11 +103,11 @@ class EventDetailScreen extends StatelessWidget {
 
           // --- Participants ---
           Text(
-            "Participants (${event.participants.length}):",
+            "Participants (${widget.event.participants.length}):",
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          ...event.participants.map(
+          ...widget.event.participants.map(
             (p) => ListTile(
               title: Text(p.userId),
               subtitle: Text("Status: ${p.status}"),
@@ -109,7 +122,7 @@ class EventDetailScreen extends StatelessWidget {
           // --- Join Event Button ---
           ElevatedButton(
             onPressed: () {
-              // TODO: implement joinEvent function from your service
+              // You can now access `mapController` here if needed
             },
             child: const Text("Join Event"),
           ),
