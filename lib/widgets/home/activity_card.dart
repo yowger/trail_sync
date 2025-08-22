@@ -39,11 +39,11 @@ class ActivityCard extends StatelessWidget {
 
     return Card(
       color: Colors.white,
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+      elevation: 0.3,
+      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -73,7 +73,6 @@ class ActivityCard extends StatelessWidget {
                     ),
                   ],
                 ),
-
                 Text(
                   formattedDate,
                   style: TextStyle(
@@ -84,14 +83,17 @@ class ActivityCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                StatItem(value: duration, label: "Time"),
-                StatItem(value: distance, unit: "km", label: "Distance"),
-                StatItem(value: pace ?? "0", unit: "/km", label: "Avg Pace"),
-              ],
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.only(left: 40),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  StatItem(value: duration, label: "Time"),
+                  StatItem(value: distance, unit: "km", label: "Distance"),
+                  StatItem(value: pace ?? "0", unit: "/km", label: "Avg Pace"),
+                ],
+              ),
             ),
             const SizedBox(height: 8),
           ],
