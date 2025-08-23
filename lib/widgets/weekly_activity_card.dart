@@ -15,7 +15,9 @@ class WeeklyStatsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 2,
+      color: Colors.white,
+      elevation: 0.3,
+      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 0),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -33,12 +35,18 @@ class WeeklyStatsCard extends StatelessWidget {
                 _StatItem(
                   label: 'Activities',
                   value: totalActivities.toString(),
+                  changePercent: 12.5,
                 ),
                 _StatItem(
                   label: 'Distance',
                   value: '${totalDistance.toStringAsFixed(2)} km',
+                  changePercent: 12.5,
                 ),
-                _StatItem(label: 'Time', value: _formatDuration(totalTime)),
+                _StatItem(
+                  label: 'Time',
+                  value: _formatDuration(totalTime),
+                  changePercent: 12.5,
+                ),
               ],
             ),
           ],
@@ -62,11 +70,29 @@ class WeeklyStatsCard extends StatelessWidget {
 class _StatItem extends StatelessWidget {
   final String label;
   final String value;
+  final double? changePercent;
 
-  const _StatItem({required this.label, required this.value});
+  const _StatItem({
+    required this.label,
+    required this.value,
+    this.changePercent,
+  });
 
   @override
   Widget build(BuildContext context) {
+    Color? changeColor;
+    IconData? changeIcon;
+
+    if (changePercent != null) {
+      if (changePercent! > 0) {
+        changeColor = Colors.green;
+        changeIcon = Icons.arrow_upward;
+      } else if (changePercent! < 0) {
+        changeColor = Colors.red;
+        changeIcon = Icons.arrow_downward;
+      }
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -74,7 +100,23 @@ class _StatItem extends StatelessWidget {
           value,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
         ),
-        Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+        Row(
+          children: [
+            Text(
+              label,
+              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+            ),
+            if (changePercent != null) ...[
+              const SizedBox(width: 4),
+              Icon(changeIcon, size: 12, color: changeColor),
+              const SizedBox(width: 2),
+              Text(
+                '${changePercent!.abs().toStringAsFixed(0)}%',
+                style: TextStyle(color: changeColor, fontSize: 12),
+              ),
+            ],
+          ],
+        ),
       ],
     );
   }

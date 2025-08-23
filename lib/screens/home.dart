@@ -84,7 +84,6 @@ class HomeScreen extends ConsumerWidget {
                   totalTime: totalTime,
                 ),
                 const SizedBox(height: 16),
-
                 LatestActivityList(runs: runs, userAsync: userAsync),
               ],
             );

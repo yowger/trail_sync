@@ -22,41 +22,70 @@ class _RunDetailScreenState extends State<RunDetailScreen> {
   Widget build(BuildContext context) {
     final splits = run_split.calculateSplits(widget.run.points);
 
-    for (var s in splits) {
-      print(
-        "☺️🙂😊😀😁 Km ${s.kilometer}: "
-        "${s.duration.inMinutes}:${(s.duration.inSeconds % 60).toString().padLeft(2, '0')} "
-        "(${s.pace.toStringAsFixed(2)} min/km)",
-      );
-    }
-
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: buildAppBar(context),
-      body: Column(
+      body: Stack(
         children: [
           if (widget.run.points.isNotEmpty)
-            SizedBox(
-              height: 300,
+            Positioned.fill(
               child: RunMap(
                 run: widget.run,
                 controllerSetter: (c) => mapController = c,
               ),
             ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    RunStats(run: widget.run),
-                    RunSplits(
-                      splits: run_split.calculateSplits(widget.run.points),
+
+          DraggableScrollableSheet(
+            initialChildSize: 0.6,
+            minChildSize: 0.15,
+            maxChildSize: 1.0,
+            builder: (context, scrollController) {
+              return Container(
+                decoration: BoxDecoration(
+                  // color: Colors.white,
+                  color: Colors.grey[50],
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      blurRadius: 12,
+                      color: Colors.black26.withValues(alpha: 0.10),
                     ),
                   ],
                 ),
-              ),
-            ),
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[400],
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+
+                      RunStats(run: widget.run),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Splits",
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 8),
+                      RunSplits(splits: splits),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -99,13 +128,6 @@ class _RunMapState extends State<RunMap> {
   Line? trailLine;
 
   @override
-  void dispose() {
-    _controller?.dispose();
-    _controller = null;
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return MapLibreMap(
       initialCameraPosition: CameraPosition(
@@ -118,7 +140,7 @@ class _RunMapState extends State<RunMap> {
       onMapCreated: (controller) async {
         _controller = controller;
         widget.controllerSetter(controller);
-        _fitBounds();
+        _fitBounds(bottomInsetFraction: 0.5);
       },
       onStyleLoadedCallback: () async {
         await _drawTrail();
@@ -128,7 +150,7 @@ class _RunMapState extends State<RunMap> {
     );
   }
 
-  void _fitBounds() {
+  void _fitBounds({double bottomInsetFraction = 0.0}) {
     final latitudes = widget.run.points.map((p) => p.lat).toList();
     final longitudes = widget.run.points.map((p) => p.lng).toList();
 
@@ -143,13 +165,16 @@ class _RunMapState extends State<RunMap> {
       northeast: LatLng(maxLat + margin, maxLng + margin),
     );
 
+    final screenHeight = MediaQuery.of(context).size.height;
+    final bottomInset = screenHeight * bottomInsetFraction;
+
     _controller?.moveCamera(
       CameraUpdate.newLatLngBounds(
         bounds,
         left: 16,
         top: 16,
         right: 16,
-        bottom: 16,
+        bottom: 16 + bottomInset,
       ),
     );
   }
@@ -504,19 +529,52 @@ class RunSplits extends StatelessWidget {
     }
 
     return Card(
+      color: Colors.white,
       elevation: 0.3,
-      margin: const EdgeInsets.only(top: 16),
+      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 0),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Splits",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: const [
+                Expanded(
+                  child: Text(
+                    "Km",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    "Duration",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    "Pace",
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
+
+            const Divider(thickness: 1, height: 16),
+
             Column(
               children: splits.map((s) {
                 return Padding(
@@ -524,12 +582,21 @@ class RunSplits extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Km ${s.kilometer}"),
-                      Text(
-                        "${s.duration.inMinutes}:${(s.duration.inSeconds % 60).toString().padLeft(2, '0')}",
-                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      Expanded(child: Text("${s.kilometer}")),
+
+                      Expanded(
+                        child: Text(
+                          "${s.duration.inMinutes}:${(s.duration.inSeconds % 60).toString().padLeft(2, '0')}",
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
                       ),
-                      Text("${s.pace.toStringAsFixed(2)} /km"),
+                      Expanded(
+                        child: Text(
+                          "${s.pace.toStringAsFixed(2)} /km",
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
                     ],
                   ),
                 );
