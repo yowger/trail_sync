@@ -1,3 +1,5 @@
+import 'package:latlong2/latlong.dart';
+
 class RunPoint {
   final double lat;
   final double lng;
@@ -16,4 +18,6 @@ class RunPoint {
   Map<String, dynamic> toMap() {
     return {'lat': lat, 'lng': lng, 'timestamp': timestamp.toIso8601String()};
   }
+
+  LatLng toLatLng() => LatLng(lat, lng);
 }

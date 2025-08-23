@@ -11,6 +11,7 @@ class ActivityCard extends StatelessWidget {
   final String? pace;
   final List<LatLng> trailPoints;
   final DateTime? date;
+
   const ActivityCard({
     super.key,
     this.activityName,
@@ -35,6 +36,7 @@ class ActivityCard extends StatelessWidget {
       }
       formattedTime = DateFormat('h:mm a').format(date!);
     }
+
     return Card(
       color: Colors.white,
       elevation: 0.3,

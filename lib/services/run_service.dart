@@ -9,7 +9,7 @@ class RunService {
 
   Future<List<Run>> fetchRecentRuns({
     required String userId,
-    int limit = 5,
+    int limit = 3,
   }) async {
     final snapshot = await _firestore
         .collection('runs')

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:intl/intl.dart';
+import 'dart:ui' as ui;
+
 import 'package:trail_sync/models/run.dart';
+import 'package:trail_sync/helpers/run_split.dart' as run_split;
 
 class RunDetailScreen extends StatefulWidget {
   final Run run;
@@ -12,14 +16,23 @@ class RunDetailScreen extends StatefulWidget {
 }
 
 class _RunDetailScreenState extends State<RunDetailScreen> {
-  MapLibreMapController? _mapController;
-  Line? _trailLine;
+  MapLibreMapController? mapController;
 
   @override
   Widget build(BuildContext context) {
+    final splits = run_split.calculateSplits(widget.run.points);
+
+    for (var s in splits) {
+      print(
+        "☺️🙂😊😀😁 Km ${s.kilometer}: "
+        "${s.duration.inMinutes}:${(s.duration.inSeconds % 60).toString().padLeft(2, '0')} "
+        "(${s.pace.toStringAsFixed(2)} min/km)",
+      );
+    }
+
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: _buildAppBar(context),
+      appBar: buildAppBar(context),
       body: Column(
         children: [
           if (widget.run.points.isNotEmpty)
@@ -27,39 +40,48 @@ class _RunDetailScreenState extends State<RunDetailScreen> {
               height: 300,
               child: RunMap(
                 run: widget.run,
-                controllerSetter: (c) => _mapController = c,
+                controllerSetter: (c) => mapController = c,
               ),
             ),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: SingleChildScrollView(child: RunStats(run: widget.run)),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    RunStats(run: widget.run),
+                    RunSplits(
+                      splits: run_split.calculateSplits(widget.run.points),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  AppBar _buildAppBar(BuildContext context) {
-    return AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      leading: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Ink(
-          decoration: const ShapeDecoration(
-            color: Colors.black54,
-            shape: CircleBorder(),
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
+AppBar buildAppBar(BuildContext context) {
+  return AppBar(
+    backgroundColor: Colors.transparent,
+    elevation: 0,
+    leading: Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Ink(
+        decoration: const ShapeDecoration(
+          color: Colors.black54,
+          shape: CircleBorder(),
+        ),
+        child: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class RunMap extends StatefulWidget {
@@ -74,7 +96,14 @@ class RunMap extends StatefulWidget {
 
 class _RunMapState extends State<RunMap> {
   MapLibreMapController? _controller;
-  Line? _trailLine;
+  Line? trailLine;
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    _controller = null;
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +156,7 @@ class _RunMapState extends State<RunMap> {
 
   Future<void> _drawTrail() async {
     if (_controller != null && widget.run.points.isNotEmpty) {
-      _trailLine = await _controller!.addLine(
+      trailLine = await _controller!.addLine(
         LineOptions(
           geometry: widget.run.points.map((p) => LatLng(p.lat, p.lng)).toList(),
           lineColor: "#2563EB",
@@ -173,10 +202,23 @@ class RunStats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final distance = "${(run.distanceKm ?? 0).toStringAsFixed(2)} km";
+    final now = DateTime.now();
+    String formattedDate = '';
+    String formattedTime = '';
+    if (run.startTime != null) {
+      final st = run.startTime!;
+      if (st.year == now.year) {
+        formattedDate = DateFormat('MMM d').format(st);
+      } else {
+        formattedDate = DateFormat('MMM d, yyyy').format(st);
+      }
+      formattedTime = DateFormat('h:mm a').format(st);
+    }
+
+    final distance = (run.distanceKm).toStringAsFixed(2);
     final duration = _formatDuration(Duration(seconds: run.durationSec ?? 0));
     final pace = run.avgPaceMinPerKm != null
-        ? "${run.avgPaceMinPerKm!.toStringAsFixed(2)} /km"
+        ? run.avgPaceMinPerKm!.toStringAsFixed(2)
         : "-";
 
     final dateStr = run.endTime != null
@@ -186,71 +228,118 @@ class RunStats extends StatelessWidget {
         ? "${run.endTime!.hour}:${run.endTime!.minute.toString().padLeft(2, '0')}"
         : "-";
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    return Card(
+      color: Colors.white,
+      elevation: 0.3,
+      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.blue.shade100,
-              child: Icon(
-                _getActivityIcon(run.mode),
-                size: 18,
-                color: Colors.blue.shade700,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 14,
+                      backgroundColor: Colors.blue.shade100,
+                      child: Icon(
+                        getActivityIcon(run.mode),
+                        size: 18,
+                        color: Colors.blue.shade700,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      getActivityLabel(run.mode),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 18,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today,
+                      size: 16,
+                      color: Colors.grey[600],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      formattedDate,
+                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                    ),
+                    const SizedBox(width: 12),
+                    Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text(
+                      formattedTime,
+                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
+
+            const SizedBox(height: 14),
+
             Text(
               run.name,
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
+
+            const SizedBox(height: 8),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: StatItem(label: "Duration", value: duration),
+                ),
+                Expanded(
+                  child: StatItem(
+                    label: "Distance",
+                    unit: "km",
+                    value: distance,
+                  ),
+                ),
+                Expanded(
+                  child: StatItem(label: "Avg Pace", unit: "/km", value: pace),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            if (run.description.isNotEmpty) ...[
+              const Text(
+                "Description:",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4),
+              ExpandableText(text: run.description),
+            ],
           ],
         ),
-        const SizedBox(height: 12),
-
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            StatItem(label: "Duration", value: duration),
-            StatItem(label: "Distance", value: distance),
-            StatItem(label: "Pace", value: pace),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        Row(
-          children: [
-            StatItem(label: "Date", value: dateStr),
-            const SizedBox(width: 24),
-            StatItem(label: "Time", value: timeStr),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        if ((run.description).isNotEmpty)
-          Text(
-            "Description: ${run.description}",
-            style: const TextStyle(fontSize: 14, color: Colors.black87),
-          ),
-      ],
+      ),
     );
-  }
-
-  IconData _getActivityIcon(String? activityType) {
-    switch (activityType?.toLowerCase()) {
-      case "running":
-        return Icons.directions_run;
-      case "walking":
-        return Icons.directions_walk;
-      case "cycling":
-      case "biking":
-        return Icons.directions_bike;
-      default:
-        return Icons.fitness_center;
-    }
   }
 
   String _formatDuration(Duration d) {
@@ -263,30 +352,192 @@ class RunStats extends StatelessWidget {
 }
 
 class StatItem extends StatelessWidget {
-  final String label;
   final String value;
-
-  const StatItem({super.key, required this.label, required this.value});
-
+  final String label;
+  final String? unit;
+  const StatItem({
+    super.key,
+    required this.value,
+    required this.label,
+    this.unit,
+  });
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        const SizedBox(width: 6),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
           children: [
             Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
             ),
-            Text(
-              label,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            if (unit != null) ...[
+              const SizedBox(width: 2),
+              Text(
+                unit!,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ],
+        ),
+        Text(label, style: TextStyle(fontSize: 12.75, color: Colors.grey[600])),
+      ],
+    );
+  }
+}
+
+String getActivityLabel(String type) {
+  switch (type.toLowerCase()) {
+    case "running":
+      return "Run";
+    case "cycling":
+      return "Cycle";
+    case "walking":
+      return "Walk";
+    default:
+      return "Activity";
+  }
+}
+
+IconData getActivityIcon(String activityType) {
+  switch (activityType.toLowerCase()) {
+    case "running":
+      return Icons.directions_run;
+    case "walking":
+      return Icons.directions_walk;
+    case "cycling":
+    case "biking":
+      return Icons.directions_bike;
+    default:
+      return Icons.fitness_center;
+  }
+}
+
+class ExpandableText extends StatefulWidget {
+  final String text;
+  final int trimLines;
+
+  const ExpandableText({super.key, required this.text, this.trimLines = 3});
+
+  @override
+  State<ExpandableText> createState() => _ExpandableTextState();
+}
+
+class _ExpandableTextState extends State<ExpandableText> {
+  bool isExpanded = false;
+  bool isOverflowing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkOverflow());
+  }
+
+  void _checkOverflow() {
+    final textSpan = TextSpan(
+      text: widget.text,
+      style: const TextStyle(fontSize: 14, color: Colors.black87),
+    );
+    final tp = TextPainter(
+      text: textSpan,
+      maxLines: widget.trimLines,
+      textDirection: ui.TextDirection.ltr,
+    );
+    tp.layout(maxWidth: context.size?.width ?? double.infinity);
+
+    if (mounted) {
+      setState(() {
+        isOverflowing = tp.didExceedMaxLines;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final style = const TextStyle(fontSize: 14, color: Colors.black87);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.text,
+          style: style,
+          maxLines: isExpanded ? null : widget.trimLines,
+          overflow: isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+        ),
+        if (isOverflowing) ...[
+          const SizedBox(height: 4),
+          InkWell(
+            onTap: () => setState(() => isExpanded = !isExpanded),
+            child: Text(
+              isExpanded ? "Show less" : "Show more",
+              style: const TextStyle(
+                fontSize: 13,
+                color: Colors.blue,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class RunSplits extends StatelessWidget {
+  final List<run_split.Split> splits;
+
+  const RunSplits({super.key, required this.splits});
+
+  @override
+  Widget build(BuildContext context) {
+    if (splits.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      elevation: 0.3,
+      margin: const EdgeInsets.only(top: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Splits",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            Column(
+              children: splits.map((s) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text("Km ${s.kilometer}"),
+                      Text(
+                        "${s.duration.inMinutes}:${(s.duration.inSeconds % 60).toString().padLeft(2, '0')}",
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      Text("${s.pace.toStringAsFixed(2)} /km"),
+                    ],
+                  ),
+                );
+              }).toList(),
             ),
           ],
         ),
-      ],
+      ),
     );
   }
 }
