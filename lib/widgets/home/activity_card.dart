@@ -51,17 +51,17 @@ class ActivityCard extends StatelessWidget {
                 Row(
                   children: [
                     CircleAvatar(
-                      radius: 16,
+                      radius: 14,
                       backgroundColor: Colors.blue.shade100,
                       child: Icon(
                         getActivityIcon(activityType),
-                        size: 20,
+                        size: 18,
                         color: Colors.blue.shade700,
                       ),
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      capitalize(activityName ?? "Running"),
+                      getActivityLabel(activityType),
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 18,
@@ -99,32 +99,43 @@ class ActivityCard extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 10),
-            Padding(
-              padding: const EdgeInsets.only(left: 42),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: StatItem(value: duration, label: "Time"),
-                  ),
-                  Expanded(
-                    child: StatItem(
-                      value: distance,
-                      unit: "km",
-                      label: "Distance",
-                    ),
-                  ),
-                  Expanded(
-                    child: StatItem(
-                      value: pace ?? "0",
-                      unit: "/km",
-                      label: "Avg Pace",
-                    ),
-                  ),
-                ],
+            const SizedBox(height: 14),
+            if (activityName != null && activityName!.isNotEmpty)
+              Text(
+                activityName!,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
+
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: StatItem(value: duration, label: "Duration"),
+                ),
+                Expanded(
+                  child: StatItem(
+                    value: distance,
+                    unit: "km",
+                    label: "Distance",
+                  ),
+                ),
+                Expanded(
+                  child: StatItem(
+                    value: pace ?? "0",
+                    unit: "/km",
+                    label: "Avg Pace",
+                  ),
+                ),
+              ],
             ),
+
             const SizedBox(height: 8),
           ],
         ),
@@ -156,7 +167,7 @@ class StatItem extends StatelessWidget {
           children: [
             Text(
               value,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
             ),
             if (unit != null) ...[
               const SizedBox(width: 2),
@@ -187,6 +198,19 @@ IconData getActivityIcon(String activityType) {
       return Icons.directions_bike;
     default:
       return Icons.fitness_center;
+  }
+}
+
+String getActivityLabel(String type) {
+  switch (type.toLowerCase()) {
+    case "running":
+      return "Run";
+    case "cycling":
+      return "Cycle";
+    case "walking":
+      return "Walk";
+    default:
+      return "Activity";
   }
 }
 
