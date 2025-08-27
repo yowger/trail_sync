@@ -5,7 +5,7 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'package:trail_sync/helpers/run_format.dart';
 import 'package:trail_sync/models/run.dart';
-import 'package:trail_sync/screens/run_details.dart';
+import 'package:trail_sync/features/home/screens/run_details.dart';
 import 'package:trail_sync/features/home/widgets/activity_card.dart';
 
 class LatestActivityList extends StatelessWidget {

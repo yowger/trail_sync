@@ -16,6 +16,7 @@ class StatItem extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
+        Text(label, style: TextStyle(fontSize: 12)),
         Row(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -23,7 +24,7 @@ class StatItem extends StatelessWidget {
           children: [
             Text(
               value,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             if (unit != null) ...[
               const SizedBox(width: 2),
@@ -37,7 +38,6 @@ class StatItem extends StatelessWidget {
             ],
           ],
         ),
-        Text(label, style: TextStyle(fontSize: 12.75)),
       ],
     );
   }

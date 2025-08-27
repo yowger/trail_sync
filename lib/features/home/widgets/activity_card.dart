@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:intl/intl.dart';
 import 'package:trail_sync/features/home/widgets/stat_item.dart';
+import 'package:trail_sync/widgets/ui/expandable_text.dart';
 
 class ActivityCard extends StatelessWidget {
   final String? activityName;
   final String? address;
+  final String? description;
   final String username;
   final String? userImageUrl;
-  final VoidCallback? onAvatarTap;
-  final VoidCallback? onCardTap;
   final String? activityType;
   final String distance;
   final String duration;
@@ -17,10 +17,14 @@ class ActivityCard extends StatelessWidget {
   final List<LatLng> trailPoints;
   final DateTime? date;
 
+  final VoidCallback? onAvatarTap;
+  final VoidCallback? onCardTap;
+
   const ActivityCard({
     super.key,
     this.activityName,
     this.address,
+    this.description,
     required this.username,
     this.userImageUrl,
     this.onAvatarTap,
@@ -53,7 +57,9 @@ class ActivityCard extends StatelessWidget {
                     userImageUrl: userImageUrl,
                     onTap: onAvatarTap,
                   ),
+
                   const SizedBox(width: 12),
+
                   Expanded(
                     child: UserInfo(
                       username: username,
@@ -65,28 +71,47 @@ class ActivityCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 24),
+
               if (activityName != null && activityName!.isNotEmpty)
                 Text(
                   activityName!,
                   style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black87,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+
               const SizedBox(height: 8),
+
               Row(
                 children: [
                   StatItem(value: distance, unit: "km", label: "Distance"),
-                  const SizedBox(width: 36),
+                  const SizedBox(width: 40),
                   StatItem(value: duration, label: "Duration"),
-                  const SizedBox(width: 36),
+                  const SizedBox(width: 40),
                   StatItem(value: pace ?? "0", unit: "/km", label: "Avg Pace"),
                 ],
               ),
+
               const SizedBox(height: 8),
+
+              if (description != null) ...[
+                const SizedBox(height: 8),
+
+                const Text(
+                  "Description:",
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 4),
+
+                ExpandableText(text: description ?? ""),
+              ],
             ],
           ),
         ),
@@ -129,7 +154,7 @@ class UserInfo extends StatelessWidget {
         children: [
           Text(
             username,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           ),
           if (date != null)
             Row(
