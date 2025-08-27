@@ -15,6 +15,7 @@ class HomeScreen extends ConsumerWidget {
     final userAsync = ref.watch(authStateProvider);
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         elevation: 0,

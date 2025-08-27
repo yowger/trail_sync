@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:intl/intl.dart';
+
 import 'package:trail_sync/features/home/widgets/activity_card.dart';
+import 'package:trail_sync/features/home/widgets/map_details.dart';
 import 'package:trail_sync/features/home/widgets/run_splits.dart';
 import 'package:trail_sync/helpers/run_format.dart';
-import 'dart:ui' as ui;
-
 import 'package:trail_sync/models/run.dart';
 import 'package:trail_sync/helpers/run_split.dart' as run_split;
+import 'package:trail_sync/widgets/ui/app_divider.dart';
 
 class RunDetailScreen extends StatefulWidget {
   final Run run;
@@ -33,7 +33,7 @@ class _RunDetailScreenState extends State<RunDetailScreen> {
         children: [
           if (widget.run.points.isNotEmpty)
             Positioned.fill(
-              child: RunMap(
+              child: MapDetails(
                 run: widget.run,
                 controllerSetter: (c) => mapController = c,
               ),
@@ -93,12 +93,7 @@ class _RunDetailScreenState extends State<RunDetailScreen> {
                             .toList(),
                       ),
 
-                      Divider(
-                        color: Colors.grey[300],
-                        thickness: 3,
-                        indent: 0,
-                        endIndent: 0,
-                      ),
+                      AppDivider(),
 
                       const SizedBox(height: 16),
 
@@ -145,111 +140,4 @@ AppBar buildAppBar(BuildContext context) {
       ),
     ),
   );
-}
-
-class RunMap extends StatefulWidget {
-  final Run run;
-  final void Function(MapLibreMapController) controllerSetter;
-
-  const RunMap({super.key, required this.run, required this.controllerSetter});
-
-  @override
-  State<RunMap> createState() => _RunMapState();
-}
-
-class _RunMapState extends State<RunMap> {
-  MapLibreMapController? _controller;
-  Line? trailLine;
-
-  @override
-  Widget build(BuildContext context) {
-    return MapLibreMap(
-      initialCameraPosition: CameraPosition(
-        target: LatLng(
-          widget.run.points.first.lat,
-          widget.run.points.first.lng,
-        ),
-        zoom: 8,
-      ),
-      onMapCreated: (controller) async {
-        _controller = controller;
-        widget.controllerSetter(controller);
-        _fitBounds(bottomInsetFraction: 0.5);
-      },
-      onStyleLoadedCallback: () async {
-        await _drawTrail();
-      },
-      styleString:
-          "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
-    );
-  }
-
-  void _fitBounds({double bottomInsetFraction = 0.0}) {
-    final latitudes = widget.run.points.map((p) => p.lat).toList();
-    final longitudes = widget.run.points.map((p) => p.lng).toList();
-
-    double minLat = latitudes.reduce((a, b) => a < b ? a : b);
-    double maxLat = latitudes.reduce((a, b) => a > b ? a : b);
-    double minLng = longitudes.reduce((a, b) => a < b ? a : b);
-    double maxLng = longitudes.reduce((a, b) => a > b ? a : b);
-
-    const margin = 0.0005;
-    final bounds = LatLngBounds(
-      southwest: LatLng(minLat - margin, minLng - margin),
-      northeast: LatLng(maxLat + margin, maxLng + margin),
-    );
-
-    final screenHeight = MediaQuery.of(context).size.height;
-    final bottomInset = screenHeight * bottomInsetFraction;
-
-    _controller?.moveCamera(
-      CameraUpdate.newLatLngBounds(
-        bounds,
-        left: 16,
-        top: 16,
-        right: 16,
-        bottom: 16 + bottomInset,
-      ),
-    );
-  }
-
-  Future<void> _drawTrail() async {
-    if (_controller != null && widget.run.points.isNotEmpty) {
-      trailLine = await _controller!.addLine(
-        LineOptions(
-          geometry: widget.run.points.map((p) => LatLng(p.lat, p.lng)).toList(),
-          lineColor: "#2563EB",
-          lineWidth: 3,
-          lineOpacity: 0.8,
-          lineJoin: "round",
-        ),
-      );
-
-      await _controller!.addSymbol(
-        SymbolOptions(
-          geometry: LatLng(
-            widget.run.points.first.lat,
-            widget.run.points.first.lng,
-          ),
-          iconImage: "marker-15",
-          iconSize: 1.5,
-          textField: "Start",
-          textOffset: const Offset(0, 1.5),
-        ),
-      );
-
-      await _controller!.addSymbol(
-        SymbolOptions(
-          geometry: LatLng(
-            widget.run.points.last.lat,
-            widget.run.points.last.lng,
-          ),
-          iconImage: "marker-15",
-          iconSize: 1.5,
-          textField: "End",
-          textOffset: const Offset(0, 1.5),
-        ),
-      );
-    }
-  }
 }

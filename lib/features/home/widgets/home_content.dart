@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:trail_sync/models/run.dart';
 import 'package:trail_sync/features/home/widgets/latest_activity_list.dart';
+import 'package:trail_sync/widgets/ui/app_divider.dart';
 import 'package:trail_sync/widgets/weekly_activity_card.dart';
 
 class HomeContent extends StatelessWidget {
@@ -36,7 +37,7 @@ class HomeContent extends StatelessWidget {
           totalDistance: totalDistance,
           totalTime: totalTime,
         ),
-        const SizedBox(height: 16),
+        AppDivider(),
         LatestActivityList(runs: runs, userAsync: userAsync),
       ],
     );

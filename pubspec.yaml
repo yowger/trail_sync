@@ -18,7 +18,7 @@ dependencies:
     cloud_firestore: ^6.0.0
     firebase_core: ^4.0.0
     flutter_riverpod: ^2.6.1
-    flutter_background_geolocation: '^4.12.0'
+    flutter_background_geolocation: "^4.12.0"
     latlong2: ^0.9.1
     flutter_compass: ^0.8.1
     maplibre_gl: ^0.22.0
@@ -37,5 +37,6 @@ dev_dependencies:
 flutter:
     uses-material-design: true
 
-assets:
-    - assets/images/google.png
+    assets:
+        - assets/images/
+        - assets/images/google.png
