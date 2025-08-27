@@ -13,7 +13,7 @@ class RunService {
   }) async {
     final snapshot = await _firestore
         .collection('runs')
-        .where('userId', isEqualTo: userId)
+        .where('user.id', isEqualTo: userId)
         .orderBy('startTime', descending: true)
         .limit(limit)
         .get();

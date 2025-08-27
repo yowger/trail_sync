@@ -1,5 +1,5 @@
 import 'package:latlong2/latlong.dart';
-import 'package:trail_sync/models/run_model.dart';
+import 'package:trail_sync/models/run.dart';
 
 class Split {
   final int kilometer;

@@ -7,7 +7,7 @@ import 'package:icons_plus/icons_plus.dart';
 import 'package:trail_sync/providers/auth_provider.dart';
 import 'package:trail_sync/widgets/custom_button.dart';
 import 'package:trail_sync/widgets/custom_form_text_field.dart';
-import 'package:trail_sync/widgets/auth_header.dart';
+import 'package:trail_sync/features/auth/widgets/auth_header.dart';
 import 'package:trail_sync/widgets/floating_snackbar.dart';
 import 'package:trail_sync/widgets/text_divider.dart';
 

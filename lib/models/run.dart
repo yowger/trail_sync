@@ -1,8 +1,32 @@
-import 'package:trail_sync/models/run_model.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:trail_sync/models/user_model.dart';
+
+class RunPoint {
+  final double lat;
+  final double lng;
+  final DateTime timestamp;
+
+  RunPoint({required this.lat, required this.lng, required this.timestamp});
+
+  factory RunPoint.fromMap(Map<String, dynamic> map) {
+    return RunPoint(
+      lat: (map['lat'] as num).toDouble(),
+      lng: (map['lng'] as num).toDouble(),
+      timestamp: DateTime.parse(map['timestamp'] as String),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {'lat': lat, 'lng': lng, 'timestamp': timestamp.toIso8601String()};
+  }
+
+  LatLng toLatLng() => LatLng(lat, lng);
+}
 
 class Run {
   final String id;
-  final String userId;
+  final AppUser user;
+  final String address;
   final String name;
   final String description;
   final String mode;
@@ -15,7 +39,8 @@ class Run {
 
   Run({
     required this.id,
-    required this.userId,
+    required this.user,
+    required this.address,
     required this.name,
     required this.description,
     required this.mode,
@@ -30,7 +55,8 @@ class Run {
   factory Run.fromMap(Map<String, dynamic> map) {
     return Run(
       id: map['id'] as String,
-      userId: map['userId'] as String,
+      user: AppUser.fromMap(map['user'] as Map<String, dynamic>),
+      address: map['address'] as String,
       name: map['name'] as String? ?? 'Unnamed Run',
       description: map['description'] as String? ?? '',
       mode: map['mode'] as String? ?? 'running',
@@ -50,7 +76,8 @@ class Run {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'userId': userId,
+      'user': user.toMap(),
+      'address': address,
       'name': name,
       'description': description,
       'mode': mode,
