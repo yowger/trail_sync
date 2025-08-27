@@ -3,6 +3,7 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:intl/intl.dart';
 import 'package:trail_sync/features/home/widgets/stat_item.dart';
 import 'package:trail_sync/widgets/ui/expandable_text.dart';
+import 'package:trail_sync/widgets/ui/user_avatar.dart';
 
 class ActivityCard extends StatelessWidget {
   final String? activityName;
@@ -175,43 +176,6 @@ class UserInfo extends StatelessWidget {
               ],
             ),
         ],
-      ),
-    );
-  }
-}
-
-class UserAvatar extends StatelessWidget {
-  final String username;
-  final String? userImageUrl;
-  final VoidCallback? onTap;
-
-  const UserAvatar({
-    super.key,
-    required this.username,
-    this.userImageUrl,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: CircleAvatar(
-        radius: 18,
-        backgroundImage: userImageUrl != null
-            ? NetworkImage(userImageUrl!)
-            : null,
-        backgroundColor: Colors.grey[300],
-        child: userImageUrl == null
-            ? Text(
-                username.isNotEmpty ? username[0].toUpperCase() : "?",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Colors.black87,
-                ),
-              )
-            : null,
       ),
     );
   }

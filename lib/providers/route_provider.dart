@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
+import 'package:trail_sync/features/home/screens/profile_screen.dart';
 
 import 'package:trail_sync/providers/auth_provider.dart';
 import 'package:trail_sync/screens/create_event_run.dart';
@@ -64,6 +65,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'save_run',
         builder: (context, state) {
           return const SaveRunScreen();
+        },
+      ),
+      GoRoute(
+        path: '/user/:id',
+        builder: (context, state) {
+          final userId = state.pathParameters['id']!;
+          return UserProfilePage(userId: userId);
         },
       ),
       StatefulShellRoute.indexedStack(
