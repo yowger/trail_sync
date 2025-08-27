@@ -70,8 +70,8 @@ class LatestActivityList extends StatelessWidget {
 
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-              child: InkWell(
-                onTap: () {
+              child: ActivityCard(
+                onCardTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -79,22 +79,30 @@ class LatestActivityList extends StatelessWidget {
                     ),
                   );
                 },
-                child: ActivityCard(
-                  activityName: run.name,
-                  username: userAsync.maybeWhen(
-                    data: (user) => run.user.name,
-                    orElse: () => 'You',
-                  ),
-                  address: run.address ?? "",
-                  activityType: run.mode,
-                  distance: run.distanceKm.toStringAsFixed(2),
-                  duration: formatDuration(Duration(seconds: run.durationSec)),
-                  pace: pace,
-                  date: run.startTime,
-                  trailPoints: run.points
-                      .map((p) => LatLng(p.lat, p.lng))
-                      .toList(),
+
+                onAvatarTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => RunDetailScreen(run: run),
+                    ),
+                  );
+                },
+
+                activityName: run.name,
+                username: userAsync.maybeWhen(
+                  data: (user) => run.user.name,
+                  orElse: () => 'You',
                 ),
+                address: run.address,
+                activityType: run.mode,
+                distance: run.distanceKm.toStringAsFixed(2),
+                duration: formatDuration(Duration(seconds: run.durationSec)),
+                pace: pace,
+                date: run.startTime,
+                trailPoints: run.points
+                    .map((p) => LatLng(p.lat, p.lng))
+                    .toList(),
               ),
             );
           },

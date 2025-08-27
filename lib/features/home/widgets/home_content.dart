@@ -21,11 +21,11 @@ class HomeContent extends StatelessWidget {
 
     final totalDistance = weeklyRuns.fold<double>(
       0,
-      (sum, r) => sum + (r.distanceKm ?? 0),
+      (sum, r) => sum + (r.distanceKm),
     );
     final totalTime = weeklyRuns.fold<Duration>(
       Duration.zero,
-      (sum, r) => sum + Duration(seconds: r.durationSec ?? 0),
+      (sum, r) => sum + Duration(seconds: r.durationSec),
     );
     final totalActivities = weeklyRuns.length;
 
