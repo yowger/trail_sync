@@ -116,17 +116,23 @@ class ActivityCard extends StatelessWidget {
               if (description != null) ...[
                 const SizedBox(height: 16),
 
-                const Text(
-                  "Description:",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: const Text(
+                    "Description:",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 4),
 
-                ExpandableText(text: description ?? ""),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: ExpandableText(text: description ?? ""),
+                ),
               ],
 
               const SizedBox(height: 16),

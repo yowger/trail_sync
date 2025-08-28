@@ -8,7 +8,7 @@ class RouteMapPreview extends StatelessWidget {
     return Container(
       height: 250,
       width: double.infinity,
-      color: Colors.grey[300],
+      color: Colors.grey[200],
       child: const Center(
         child: Text(
           "No image available.",

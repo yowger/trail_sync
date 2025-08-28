@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:trail_sync/models/group_event_run.dart';
 import 'package:intl/intl.dart';
+
+import 'package:trail_sync/features/home/widgets/route_map_preview.dart';
+import 'package:trail_sync/models/group_event_run.dart';
 import 'package:trail_sync/screens/group_event_detail.dart';
 
 class EventCard extends StatelessWidget {
@@ -8,89 +10,93 @@ class EventCard extends StatelessWidget {
 
   const EventCard({super.key, required this.event});
 
-  String _formatDateTime(DateTime dt) {
-    return DateFormat('MMM dd, yyyy – hh:mm a').format(dt);
-  }
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => EventDetailScreen(event: event)),
+        );
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: double.infinity,
+        color: Colors.white,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            RouteMapPreview(),
 
-  IconData _getEventIcon(String type) {
-    switch (type.toLowerCase()) {
-      case "running":
-        return Icons.directions_run;
-      case "walking":
-        return Icons.directions_walk;
-      case "cycling":
-      case "biking":
-        return Icons.directions_bike;
-      default:
-        return Icons.fitness_center;
-    }
+            const SizedBox(height: 16),
+
+            if (event.name.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Text(
+                  event.name,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+
+            const SizedBox(height: 12),
+
+            _InfoRow(
+              icon: Icons.directions_run,
+              text: "${event.distanceTargetKm} km",
+            ),
+
+            const SizedBox(height: 8),
+
+            _InfoRow(
+              icon: Icons.calendar_today,
+              text: DateFormat(
+                'MMM dd, yyyy – hh:mm a',
+              ).format(event.startTime),
+            ),
+
+            const SizedBox(height: 8),
+
+            if (event.location != null)
+              _InfoRow(icon: Icons.place, text: event.location!.address),
+
+            const SizedBox(height: 8),
+
+            _InfoRow(icon: Icons.person, text: "Roger Pantil"),
+          ],
+        ),
+      ),
+    );
   }
+}
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _InfoRow({required this.icon, required this.text});
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 12,
-        ),
-        leading: CircleAvatar(
-          radius: 20,
-          backgroundColor: Colors.blue.shade100,
-          child: Icon(_getEventIcon(event.mode), color: Colors.blue.shade700),
-        ),
-        title: Text(
-          event.name,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            if (event.description.isNotEmpty)
-              Text(
-                event.description,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text(
-                  _formatDateTime(event.startTime),
-                  style: const TextStyle(color: Colors.grey),
-                ),
-              ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: Colors.black54),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 14, color: Colors.black87),
             ),
-            if (event.location != null)
-              Row(
-                children: [
-                  const Icon(Icons.location_on, size: 16, color: Colors.grey),
-                  const SizedBox(width: 4),
-                  Text(
-                    event.location!.address,
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-            const SizedBox(height: 4),
-            Text(
-              "Participants: ${event.participants.length}",
-              style: const TextStyle(color: Colors.grey),
-            ),
-          ],
-        ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => EventDetailScreen(event: event)),
-          );
-        },
+          ),
+        ],
       ),
     );
   }

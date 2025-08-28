@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:trail_sync/features/home/widgets/route_map_preview.dart';
+import 'package:trail_sync/features/routes/screens/create_route.dart';
 import 'package:trail_sync/widgets/ui/app_divider.dart';
 import 'package:trail_sync/widgets/ui/stat_item.dart';
 
@@ -24,6 +25,7 @@ class RouteViewerScreen extends StatelessWidget {
       },
       {
         "name": "Trail Adventure",
+
         "distance": 12.3,
         "duration": "95",
         "activityType": "walking",
@@ -82,9 +84,10 @@ class CreateRouteHeader extends StatelessWidget {
               ),
             ),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Create Route clicked")),
+              final route = MaterialPageRoute(
+                builder: (context) => CreateRouteScreen(),
               );
+              Navigator.push(context, route);
             },
             child: const Text("Create a Route"),
           ),
