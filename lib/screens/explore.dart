@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:trail_sync/features/routes/screens/route_viewer.dart';
 import 'package:trail_sync/screens/upcoming_events_page.dart';
 
 class ExploreScreen extends StatelessWidget {
@@ -10,7 +11,7 @@ class ExploreScreen extends StatelessWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text("Events & Routes"),
+          title: const Text("Placeholder"),
           bottom: const TabBar(
             tabs: [
               Tab(text: "Events"),
@@ -21,7 +22,7 @@ class ExploreScreen extends StatelessWidget {
         body: const TabBarView(
           children: [
             UpcomingEventsScreen(), // your events page
-            UpcomingEventsScreen(), // your events page
+            RouteViewerScreen(), // your events page
             // RoutesListScreen(),    // a page that lists saved routes
           ],
         ),

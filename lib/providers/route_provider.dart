@@ -67,13 +67,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           return const SaveRunScreen();
         },
       ),
-      GoRoute(
-        path: '/user/:id',
-        builder: (context, state) {
-          final userId = state.pathParameters['id']!;
-          return UserProfilePage(userId: userId);
-        },
-      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return TabScreen(navigationShell: navigationShell);

@@ -2,8 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:go_router/go_router.dart';
 
+import 'package:trail_sync/features/home/screens/profile_screen.dart';
 import 'package:trail_sync/helpers/run_format.dart';
 import 'package:trail_sync/models/run.dart';
 import 'package:trail_sync/features/home/screens/run_details.dart';
@@ -43,8 +43,12 @@ class LatestActivityList extends StatelessWidget {
               },
 
               onAvatarTap: () {
-                final userId = run.user.id;
-                context.push('/user/$userId');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UserProfilePage(userId: run.user.id),
+                  ),
+                );
               },
 
               activityName: run.name,

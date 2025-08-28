@@ -7,7 +7,6 @@ class UserProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Fetch user data with userId or display it
     return Scaffold(
       appBar: AppBar(title: Text('User Profile')),
       body: Center(child: Text('User ID: $userId')),

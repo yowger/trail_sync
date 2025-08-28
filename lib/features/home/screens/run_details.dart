@@ -76,6 +76,7 @@ class _RunDetailScreenState extends State<RunDetailScreen> {
                       ),
 
                       ActivityCard(
+                        showImage: false,
                         activityName: widget.run.name,
                         description: widget.run.description,
                         username: widget.run.name,

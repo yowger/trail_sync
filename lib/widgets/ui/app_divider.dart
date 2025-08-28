@@ -8,7 +8,7 @@ class AppDivider extends StatelessWidget {
 
   const AppDivider({
     super.key,
-    this.thickness = 5,
+    this.thickness = 6,
     this.color,
     this.indent = 0,
     this.endIndent = 0,
@@ -21,6 +21,7 @@ class AppDivider extends StatelessWidget {
       thickness: thickness,
       indent: indent,
       endIndent: endIndent,
+      height: thickness,
     );
   }
 }

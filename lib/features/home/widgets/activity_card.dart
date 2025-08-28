@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:intl/intl.dart';
-import 'package:trail_sync/features/home/widgets/stat_item.dart';
+import 'package:trail_sync/features/home/widgets/route_map_preview.dart';
+import 'package:trail_sync/widgets/ui/stat_item.dart';
 import 'package:trail_sync/widgets/ui/expandable_text.dart';
 import 'package:trail_sync/widgets/ui/user_avatar.dart';
 
@@ -17,6 +18,7 @@ class ActivityCard extends StatelessWidget {
   final String? pace;
   final List<LatLng> trailPoints;
   final DateTime? date;
+  final bool? showImage;
 
   final VoidCallback? onAvatarTap;
   final VoidCallback? onCardTap;
@@ -36,6 +38,7 @@ class ActivityCard extends StatelessWidget {
     this.pace,
     required this.trailPoints,
     this.date,
+    this.showImage = true,
   });
 
   @override
@@ -47,59 +50,71 @@ class ActivityCard extends StatelessWidget {
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          padding: const EdgeInsets.only(top: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  UserAvatar(
-                    username: username,
-                    userImageUrl: userImageUrl,
-                    onTap: onAvatarTap,
-                  ),
-
-                  const SizedBox(width: 12),
-
-                  Expanded(
-                    child: UserInfo(
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    UserAvatar(
                       username: username,
-                      date: date,
-                      address: address,
-                      activityType: activityType ?? "",
+                      userImageUrl: userImageUrl,
+                      onTap: onAvatarTap,
                     ),
-                  ),
-                ],
+
+                    const SizedBox(width: 12),
+
+                    Expanded(
+                      child: UserInfo(
+                        username: username,
+                        date: date,
+                        address: address,
+                        activityType: activityType ?? "",
+                      ),
+                    ),
+                  ],
+                ),
               ),
+
               const SizedBox(height: 24),
 
               if (activityName != null && activityName!.isNotEmpty)
-                Text(
-                  activityName!,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Text(
+                    activityName!,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
 
-              Row(
-                children: [
-                  StatItem(value: distance, unit: "km", label: "Distance"),
-                  const SizedBox(width: 40),
-                  StatItem(value: duration, label: "Duration"),
-                  const SizedBox(width: 40),
-                  StatItem(value: pace ?? "0", unit: "/km", label: "Avg Pace"),
-                ],
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    StatItem(value: distance, unit: "km", label: "Distance"),
+                    const SizedBox(width: 40),
+                    StatItem(value: duration, label: "Duration"),
+                    const SizedBox(width: 40),
+                    StatItem(
+                      value: pace ?? "0",
+                      unit: "/km",
+                      label: "Avg Pace",
+                    ),
+                  ],
+                ),
               ),
 
-              const SizedBox(height: 8),
-
               if (description != null) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
 
                 const Text(
                   "Description:",
@@ -113,6 +128,10 @@ class ActivityCard extends StatelessWidget {
 
                 ExpandableText(text: description ?? ""),
               ],
+
+              const SizedBox(height: 16),
+
+              if (showImage!) RouteMapPreview(),
             ],
           ),
         ),

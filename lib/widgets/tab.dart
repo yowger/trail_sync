@@ -18,6 +18,7 @@ class TabScreen extends StatelessWidget {
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Colors.red,
         currentIndex: navigationShell.currentIndex,
         onTap: _onTap,
         selectedItemColor: Colors.blue.shade600,
@@ -28,7 +29,7 @@ class TabScreen extends StatelessWidget {
             icon: Icon(Icons.directions_run),
             label: 'Activity',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Events'),
+          BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Explore'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
